@@ -3,17 +3,18 @@
 #include "imgui/imgui_draw.cpp"
 #include "imgui/imgui_tables.cpp"
 #include "imgui/imgui_widgets.cpp"
-
 #include "imgui/backends/imgui_impl_opengl3_loader.h"
 #include "imgui/backends/imgui_impl_glfw.cpp"
 #include "imgui/backends/imgui_impl_opengl3.cpp"
-
+#include "ult_fileutils.h"
+#include "ult_memory.h"
+#include "ult_structs.h"
 #include <stdio.h>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
+#include <GLFW/glfw3.h>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -71,6 +72,12 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    ult_state State = {};
+    State.Arena = MakeArena();
+    char path[256]="scripts";    
+    printf("he");
+    State.Scripts = fileutils_exploreSubDirectoriesForFiles(path, &State.Arena);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -134,6 +141,22 @@ int main(int, char**)
         {
             ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
             ImGui::Text("Hello from another window!");
+
+            int CurrentDirIndex = 0;
+            directory_contents** CurrentDir = State.Scripts->Directories;
+            while (CurrentDirIndex < MAX_DIRS)
+            {
+                char d_path[255];
+                if (*CurrentDir == 0)
+                {
+                    break;
+                }
+                snprintf(d_path, (*CurrentDir)->Name.Size + 1, "%s", (*CurrentDir)->Name.Data);
+                ImGui::Text(d_path);
+                ++CurrentDirIndex;
+                ++CurrentDir;
+            }
+
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
