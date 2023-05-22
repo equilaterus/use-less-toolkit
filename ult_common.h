@@ -1,5 +1,7 @@
 #pragma once
 #include "ult_globals.h"
+#include <cstdio>
+#include <type_traits>
 
 struct buffer
 {
@@ -17,6 +19,12 @@ MakeString(uint8* Address, int32 Size)
     NewString.Data = Address;
     NewString.Size = Size;
     return(NewString);
+}
+
+inline function void
+StringToChar(string* S, char* C) 
+{
+    snprintf(C, S->Size + 1, "%s", S->Data);
 }
 
 inline internal uint32
