@@ -1,4 +1,6 @@
+#ifndef NO_INCLUDES
 #include <stdint.h>
+#endif
 
 #define local_variable static
 #define global_variable static

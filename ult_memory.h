@@ -1,9 +1,10 @@
-#pragma once
+#ifndef NO_INCLUDES
 #include <cstring>
 #include <stdlib.h>
 #include <assert.h>
 #include "ult_globals.h"
 #include "ult_common.h"
+#endif
 
 #define ARENA_SIZE_IN_BYTES Megabytes(100)
 

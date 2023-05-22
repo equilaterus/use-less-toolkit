@@ -1,3 +1,11 @@
+#define NO_INCLUDES
+
+#include <cstdlib>
+#include <stdio.h>
+#include <cstring>
+#include <dirent.h> 
+#include <iterator>
+
 #include "imgui/imgui.cpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_demo.cpp"
@@ -7,11 +15,12 @@
 #include "imgui/backends/imgui_impl_opengl3_loader.h"
 #include "imgui/backends/imgui_impl_glfw.cpp"
 #include "imgui/backends/imgui_impl_opengl3.cpp"
-#include "ult_fileutils.h"
+#include "ult_globals.h"
+#include "ult_common.h"
 #include "ult_memory.h"
 #include "ult_structs.h"
-#include <cstdlib>
-#include <stdio.h>
+#include "ult_fileutils.h"
+
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>

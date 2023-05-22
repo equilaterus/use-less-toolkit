@@ -1,7 +1,8 @@
-#pragma once
+#ifndef NO_INCLUDES
 #include "ult_globals.h"
 #include <cstdio>
 #include <type_traits>
+#endif
 
 struct buffer
 {

@@ -1,3 +1,4 @@
+#ifndef NO_INCLUDES
 #include <cstring>
 #include <dirent.h> 
 #include <iterator>
@@ -5,6 +6,7 @@
 #include "ult_globals.h"
 #include "ult_common.h"
 #include "ult_memory.h"
+#endif
 
 const int PATH_SIZE = 256;
 const int MAX_DIRS = 256;
