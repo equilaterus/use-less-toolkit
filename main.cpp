@@ -38,6 +38,20 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
         }
         StringToChar(&(*CurrentDir)->Name, d_path);
         ImGui::Text(d_path);
+        char char_file_run[255];
+        sprintf(char_file_run, "Browse-%s", d_path);
+        ImGui::PushID(char_file_run);
+        if (ImGui::Button("Browse"))
+        {
+            char char_browse[4096];
+            char cwd[PATH_MAX];
+            getcwd(cwd, sizeof(cwd));
+            sprintf(char_browse, "xdg-open %s/%s/%s", cwd, IsScript ? "scripts" : "applications" ,d_path);
+            fprintf(stderr, "%s", char_browse);
+            system(char_browse);
+        }
+        ImGui::PopID();
+        ImGui::Separator();       
 
         string* CurrentFile = (*CurrentDir)->Files;
         for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
