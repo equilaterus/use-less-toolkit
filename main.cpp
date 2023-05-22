@@ -1,4 +1,5 @@
 #include "imgui/imgui.cpp"
+#include "imgui/imgui.h"
 #include "imgui/imgui_demo.cpp"
 #include "imgui/imgui_draw.cpp"
 #include "imgui/imgui_tables.cpp"
@@ -9,12 +10,14 @@
 #include "ult_fileutils.h"
 #include "ult_memory.h"
 #include "ult_structs.h"
+#include <cstdlib>
 #include <stdio.h>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
 #include <GLFW/glfw3.h>
+#include <unistd.h>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -151,12 +154,46 @@ int main(int, char**)
                 {
                     break;
                 }
-                snprintf(d_path, (*CurrentDir)->Name.Size + 1, "%s", (*CurrentDir)->Name.Data);
+                StringToChar(&(*CurrentDir)->Name, d_path);
                 ImGui::Text(d_path);
+
+                string* CurrentFile = (*CurrentDir)->Files;
+                for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
+                {
+                    char char_file[255];
+                    StringToChar(CurrentFile, char_file);
+                    if(ImGui::Button(char_file))
+                    {
+                        char command[255];
+                        sprintf(command, "konsole -e \"sh scripts/%s/%s\" &", d_path, char_file);
+                        system(command);
+                    }
+                    char char_file_run[255];
+                    sprintf(char_file_run, "Run %s", char_file);
+                    if(ImGui::Button(char_file_run))
+                    {
+                        pid_t pid = fork();
+                        if (pid > 0) {
+                            fprintf(stderr, "PARENT\n");
+                        } else if (pid == 0) {
+                            fprintf(stderr, "CHILD\n");
+                            
+                            char command[255];
+                            sprintf(command, "scripts/%s/%s", d_path, char_file);
+                            int r = execl("/bin/sh", "sh", command, 0);
+                            fprintf(stderr, "%d\n", r);
+                            return 0;
+                        } else {
+                            fprintf(stderr, "ERROR\n");
+                        }
+                    }
+                    ++CurrentFile;
+                }
+
                 ++CurrentDirIndex;
                 ++CurrentDir;
             }
-
+            ImGui::Separator();
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
