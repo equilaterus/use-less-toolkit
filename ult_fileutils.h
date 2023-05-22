@@ -48,13 +48,14 @@ fileutils_getDirectoryContents(char Path[PATH_SIZE], char Name[PATH_SIZE], arena
   directory_contents* Directory = (directory_contents*)ReserveMemory(Arena, sizeof(directory_contents));
   Directory->Name = AllocateString(Arena, Name);
   Directory->Path = AllocateString(Arena, Path);
-  Directory->Files = (string*)ReserveMemory(Arena, sizeof(string) * fileutils_getDirectoryFileCount(Path));
+  Directory->FilesCount = fileutils_getDirectoryFileCount(Path);
+  Directory->Files = (string*)ReserveMemory(Arena, sizeof(string) * Directory->FilesCount);
 
   struct dirent * dir;
   string* BaseAddress = Directory->Files;
   while ((dir = readdir(D)) != 0) {
       if(dir->d_type != DT_DIR) {
-        *Directory->Files = AllocateString(Arena, dir->d_name);
+        *BaseAddress = AllocateString(Arena, dir->d_name);
         ++BaseAddress;
       }
   }
