@@ -24,6 +24,70 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+function void
+DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
+{
+    int CurrentDirIndex = 0;
+    directory_contents** CurrentDir = Subdirectories->Directories;
+    while (CurrentDirIndex < MAX_DIRS)
+    {
+        char d_path[255];
+        if (*CurrentDir == 0)
+        {
+            break;
+        }
+        StringToChar(&(*CurrentDir)->Name, d_path);
+        ImGui::Text(d_path);
+
+        string* CurrentFile = (*CurrentDir)->Files;
+        for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
+        {
+            char char_file[255];
+            StringToChar(CurrentFile, char_file);
+
+            if (IsScript)
+            {                
+                if(ImGui::Button(char_file))
+                {
+                    char command[255];
+                    sprintf(command, "konsole -e \"sh scripts/%s/%s\" &", d_path, char_file);
+                    system(command);
+                }
+            }
+            else 
+            {
+                char char_file_run[255];
+                sprintf(char_file_run, "Run %s", char_file);
+                if(ImGui::Button(char_file_run))
+                {
+                    pid_t pid = fork();
+                    if (pid > 0) {
+                        fprintf(stderr, "Launching application using new process...\n");
+                    } else if (pid == 0) {
+                        fprintf(stderr, "Child process...\n");                        
+                        char command[255];
+                        sprintf(command, "applications/%s/%s", d_path, char_file);
+                        int r = execl("/bin/sh", "sh", command, 0);
+                        fprintf(stderr, "%d\n", r);
+                        if (r != 0) {
+                            exit(EXIT_FAILURE);
+                        } else {
+                            exit(EXIT_SUCCESS);
+                        }
+                        
+                    } else {
+                        fprintf(stderr, "Error creating fork\n");
+                    }
+                }
+            }
+            ++CurrentFile;
+        }
+        ++CurrentDirIndex;
+        ++CurrentDir;
+    }
+    ImGui::Separator();
+}
+
 // Main code
 int main(int, char**)
 {
@@ -78,9 +142,10 @@ int main(int, char**)
 
     ult_state State = {};
     State.Arena = MakeArena();
-    char path[256]="scripts";    
-    printf("he");
-    State.Scripts = fileutils_exploreSubDirectoriesForFiles(path, &State.Arena);
+    char pathScripts[256]="scripts";    
+    State.Scripts = fileutils_exploreSubDirectoriesForFiles(pathScripts, &State.Arena);
+    char pathApplications[256]="applications";    
+    State.Applications = fileutils_exploreSubDirectoriesForFiles(pathApplications, &State.Arena);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -143,57 +208,13 @@ int main(int, char**)
         if (show_another_window)
         {
             ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
+            
+            ImGui::Text("Scripts");
+            DisplayDirectory(State.Scripts, 1);
 
-            int CurrentDirIndex = 0;
-            directory_contents** CurrentDir = State.Scripts->Directories;
-            while (CurrentDirIndex < MAX_DIRS)
-            {
-                char d_path[255];
-                if (*CurrentDir == 0)
-                {
-                    break;
-                }
-                StringToChar(&(*CurrentDir)->Name, d_path);
-                ImGui::Text(d_path);
-
-                string* CurrentFile = (*CurrentDir)->Files;
-                for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
-                {
-                    char char_file[255];
-                    StringToChar(CurrentFile, char_file);
-                    if(ImGui::Button(char_file))
-                    {
-                        char command[255];
-                        sprintf(command, "konsole -e \"sh scripts/%s/%s\" &", d_path, char_file);
-                        system(command);
-                    }
-                    char char_file_run[255];
-                    sprintf(char_file_run, "Run %s", char_file);
-                    if(ImGui::Button(char_file_run))
-                    {
-                        pid_t pid = fork();
-                        if (pid > 0) {
-                            fprintf(stderr, "PARENT\n");
-                        } else if (pid == 0) {
-                            fprintf(stderr, "CHILD\n");
-                            
-                            char command[255];
-                            sprintf(command, "scripts/%s/%s", d_path, char_file);
-                            int r = execl("/bin/sh", "sh", command, 0);
-                            fprintf(stderr, "%d\n", r);
-                            return 0;
-                        } else {
-                            fprintf(stderr, "ERROR\n");
-                        }
-                    }
-                    ++CurrentFile;
-                }
-
-                ++CurrentDirIndex;
-                ++CurrentDir;
-            }
-            ImGui::Separator();
+            ImGui::Text("Applications");
+            DisplayDirectory(State.Applications, 0);
+            
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
