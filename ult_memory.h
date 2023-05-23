@@ -2,7 +2,6 @@
 #include <cstring>
 #include <stdlib.h>
 #include <assert.h>
-#include "ult_globals.h"
 #include "ult_common.h"
 #endif
 

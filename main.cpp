@@ -45,43 +45,32 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
         {
             break;
         }
+        // Title
         StringToChar(&(*CurrentDir)->Name, d_path);
-        ImGui::Text(d_path);
-        char char_file_run[255];
-        sprintf(char_file_run, "Browse-%s", d_path);
-        ImGui::PushID(char_file_run);
-        if (ImGui::Button("Browse"))
-        {
-            char char_browse[4096];
-            char cwd[PATH_MAX];
-            getcwd(cwd, sizeof(cwd));
-            sprintf(char_browse, "xdg-open %s/%s/%s", cwd, IsScript ? "scripts" : "applications" ,d_path);
-            fprintf(stderr, "%s", char_browse);
-            system(char_browse);
-        }
-        ImGui::PopID();
-        ImGui::Separator();       
+        ImGui::AlignTextToFramePadding();
+        ImGui::SeparatorText(d_path);
 
+        // Contents (scripts or applications)
         string* CurrentFile = (*CurrentDir)->Files;
         for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
         {
             char char_file[255];
             StringToChar(CurrentFile, char_file);
-
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f,0.5f));
             if (IsScript)
             {                
-                if(ImGui::Button(char_file))
+                if(ImGui::Button(char_file, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
                 {
                     char command[255];
                     sprintf(command, "konsole -e \"sh scripts/%s/%s\" &", d_path, char_file);
                     system(command);
                 }
             }
-            else 
+            else
             {
                 char char_file_run[255];
                 sprintf(char_file_run, "Run %s", char_file);
-                if(ImGui::Button(char_file_run))
+                if(ImGui::Button(char_file_run,  ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
                 {
                     pid_t pid = fork();
                     if (pid > 0) {
@@ -101,10 +90,35 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
                     } else {
                         fprintf(stderr, "Error creating fork\n");
                     }
-                }
+                }            
             }
+            ImGui::PopStyleVar(1);
             ++CurrentFile;
         }
+
+        // Customization
+        if (ImGui::TreeNode("Customize"))
+        {   
+            ImGui::Text("Add or edit scripts");
+            
+            ImGui::SameLine();
+            char char_file_run[255];
+            sprintf(char_file_run, "Browse-%s", d_path);
+            ImGui::PushID(char_file_run);
+            if (ImGui::SmallButton("Browse"))
+            {
+                char char_browse[4096];
+                char cwd[PATH_MAX];
+                getcwd(cwd, sizeof(cwd));
+                sprintf(char_browse, "xdg-open %s/%s/%s", cwd, IsScript ? "scripts" : "applications" ,d_path);
+                fprintf(stderr, "%s", char_browse);
+                system(char_browse);
+            }
+            ImGui::PopID();
+            ImGui::TreePop();
+        } 
+
+        ImGui::NewLine();
         ++CurrentDirIndex;
         ++CurrentDir;
     }
@@ -158,17 +172,20 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
+    // State
     ult_state State = {};
     State.Arena = MakeArena();
+    // Load scripts and applications
     char pathScripts[256]="scripts";    
     State.Scripts = fileutils_exploreSubDirectoriesForFiles(pathScripts, &State.Arena);
     char pathApplications[256]="applications";    
     State.Applications = fileutils_exploreSubDirectoriesForFiles(pathApplications, &State.Arena);
+
+    State.Settings.ShowSettingsWindow = 1;
+    State.Settings.ShowApplicationsWindow = 1;
+    State.Settings.ShowScriptsWindow = 1;
+    State.Settings.ShowDemoWindow = 1;
+    State.Settings.BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -180,66 +197,28 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        // Build UI
+        if (State.Settings.ShowDemoWindow)
+           ImGui::ShowDemoWindow(&State.Settings.ShowDemoWindow);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        if (State.Settings.ShowSettingsWindow)
         {
+             ImGui::Begin("Settings", &State.Settings.ShowSettingsWindow);
+             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
+             ImGui::End();
+        }
 
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-
-            static char text[1024 * 16] =
-                "/*\n"
-                " The Pentium F00F bug, shorthand for F0 0F C7 C8,\n"
-                " the hexadecimal encoding of one offending instruction,\n"
-                " more formally, the invalid operand with locked CMPXCHG8B\n"
-                " instruction bug, is a design flaw in the majority of\n"
-                " Intel Pentium, Pentium MMX, and Pentium OverDrive\n"
-                " processors (all in the P5 microarchitecture).\n"
-                "*/\n\n"
-                "label:\n"
-                "\tlock cmpxchg8b eax\n";
-
-            static ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
-            //HelpMarker("You can use the ImGuiInputTextFlags_CallbackResize facility if you need to wire InputTextMultiline() to a dynamic string type. See misc/cpp/imgui_stdlib.h for an example. (This is not demonstrated in imgui_demo.cpp because we don't want to include <string> in here)");
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_ReadOnly", &flags, ImGuiInputTextFlags_ReadOnly);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_AllowTabInput", &flags, ImGuiInputTextFlags_AllowTabInput);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_CtrlEnterForNewLine", &flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
-            ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
+        if (State.Settings.ShowScriptsWindow)
+        {
+            ImGui::Begin("Scripts", &State.Settings.ShowScriptsWindow);       
+            DisplayDirectory(State.Scripts, 1);
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
+        if (State.Settings.ShowApplicationsWindow)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            
-            ImGui::Text("Scripts");
-            DisplayDirectory(State.Scripts, 1);
-
-            ImGui::Text("Applications");
+            ImGui::Begin("Applications", &State.Settings.ShowApplicationsWindow);            
             DisplayDirectory(State.Applications, 0);
-            
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
             ImGui::End();
         }
 
@@ -248,7 +227,10 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        glClearColor(State.Settings.BgColor.x * State.Settings.BgColor.w, 
+         State.Settings.BgColor.y * State.Settings.BgColor.w, 
+         State.Settings.BgColor.z * State.Settings.BgColor.w, 
+         State.Settings.BgColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

@@ -3,24 +3,8 @@
 #include <dirent.h> 
 #include <iterator>
 #include <stdio.h>
-#include "ult_globals.h"
-#include "ult_common.h"
-#include "ult_memory.h"
+#include "ult_structs.h"
 #endif
-
-const int PATH_SIZE = 256;
-const int MAX_DIRS = 256;
-
-struct directory_contents {
-  string Name;
-  string Path;
-  string* Files;
-  uint32 FilesCount;
-};
-
-struct subdirectories {
-   directory_contents* Directories[MAX_DIRS];
-};
 
 function int
 fileutils_getDirectoryFileCount(char Path[PATH_SIZE])
