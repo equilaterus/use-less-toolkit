@@ -15,12 +15,18 @@ struct subdirectories {
 };
 
 struct ult_settings {
-    bool ShowSettingsWindow;
-    bool ShowScriptsWindow;
-    bool ShowApplicationsWindow;
-    bool ShowDemoWindow;
+  bool Fullscreen;
+  bool Compositor;
+  bool Dockspace;
 
-    ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  int MonitorIndex;
+
+  bool ShowSettingsWindow;
+  bool ShowScriptsWindow;
+  bool ShowApplicationsWindow;
+  bool ShowDemoWindow;
+
+  ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 };
 
 struct ult_state {

@@ -54,3 +54,13 @@ IsLittleEndian()
 #define Max(a,b) a < b ? b : a
 #define Mod(a,b) a >= b ? a % b : a
 #define UnlikelyMod(a,b) UNLIKELY((a >= b)) ? a % b : a
+
+function void
+SystemCall(const char * Command, char* Result)
+{
+    FILE *cmd = popen(Command, "r");
+    while (fgets(Result, sizeof(Result), cmd) != 0) {
+        printf("%s\n", Result);
+    }
+    pclose(cmd);
+}
