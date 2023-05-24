@@ -34,11 +34,22 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 function void
+BrowseTo(const char* Path)
+{
+    char char_browse[4096];
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+    sprintf(char_browse, "xdg-open %s/%s", cwd, Path);
+    fprintf(stderr, "Browse to %s", char_browse);
+    system(char_browse);
+}
+
+function void
 RefreshGraphicSettings(GLFWwindow* Window, GLFWmonitor *Monitor, ult_settings* Settings){
     if (Settings->Fullscreen)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(Monitor);
-        glfwSetWindowMonitor(Window, Monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(Window, Monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
         glViewport(0, 0, mode->width, mode->height);
     }
     else {
@@ -83,7 +94,7 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
                 if(ImGui::Button(char_file, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
                 {
                     char command[255];
-                    sprintf(command, "konsole -e \"sh scripts/%s/%s\" &", d_path, char_file);
+                    sprintf(command, "konsole -e \"sh %s/%s/%s\" &", SCRIPTS_DIR, d_path, char_file);
                     system(command);
                 }
             }
@@ -99,7 +110,7 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
                     } else if (pid == 0) {
                         fprintf(stderr, "Child process...\n");                        
                         char command[255];
-                        sprintf(command, "applications/%s/%s", d_path, char_file);
+                        sprintf(command, "%s/%s/%s", APPLICATIONS_DIR, d_path, char_file);
                         int r = execl("/bin/sh", "sh", command, 0);
                         fprintf(stderr, "%d\n", r);
                         if (r != 0) {
@@ -116,28 +127,6 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
             ImGui::PopStyleVar(1);
             ++CurrentFile;
         }
-
-        // Customization
-        if (ImGui::TreeNode("Customize"))
-        {   
-            ImGui::Text("Add or edit scripts");
-            
-            ImGui::SameLine();
-            char char_file_run[255];
-            sprintf(char_file_run, "Browse-%s", d_path);
-            ImGui::PushID(char_file_run);
-            if (ImGui::SmallButton("Browse"))
-            {
-                char char_browse[4096];
-                char cwd[PATH_MAX];
-                getcwd(cwd, sizeof(cwd));
-                sprintf(char_browse, "xdg-open %s/%s/%s", cwd, IsScript ? "scripts" : "applications" ,d_path);
-                fprintf(stderr, "%s", char_browse);
-                system(char_browse);
-            }
-            ImGui::PopID();
-            ImGui::TreePop();
-        } 
 
         ImGui::NewLine();
         ++CurrentDirIndex;
@@ -200,10 +189,8 @@ int main(int, char**)
     ult_state State = {};
     State.Arena = MakeArena();
     // Load scripts and applications
-    char pathScripts[256]="scripts";    
-    State.Scripts = fileutils_exploreSubDirectoriesForFiles(pathScripts, &State.Arena);
-    char pathApplications[256]="applications";    
-    State.Applications = fileutils_exploreSubDirectoriesForFiles(pathApplications, &State.Arena);
+    State.Scripts = fileutils_exploreSubDirectoriesForFiles(SCRIPTS_DIR, &State.Arena);
+    State.Applications = fileutils_exploreSubDirectoriesForFiles(APPLICATIONS_DIR, &State.Arena);
 
     State.Settings.Fullscreen = 0;
     char ResultCall[256];
@@ -238,6 +225,23 @@ int main(int, char**)
         { 
             if (ImGui::BeginMenu("File"))
             {
+                if (ImGui::BeginMenu("Open directory"))
+                {
+                    if (ImGui::MenuItem("data/"))
+                    {
+                        BrowseTo(DATA_DIR);
+                    }
+                    if (ImGui::MenuItem("applications/"))
+                    {
+                        BrowseTo(APPLICATIONS_DIR);
+                    }
+                    if (ImGui::MenuItem("scripts/"))
+                    {
+                        BrowseTo(SCRIPTS_DIR);
+                    }
+                    ImGui::EndMenu();
+                }
+
                 if (ImGui::MenuItem("Quit", 0, false))
                 {
                     exit(0);

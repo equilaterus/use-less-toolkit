@@ -49,7 +49,7 @@ fileutils_getDirectoryContents(char Path[PATH_SIZE], char Name[PATH_SIZE], arena
 }
 
 function subdirectories*
-fileutils_exploreSubDirectoriesForFiles(char Path[PATH_SIZE], arena* Arena)
+fileutils_exploreSubDirectoriesForFiles(const char* Path, arena* Arena)
 {
   DIR* D = opendir(Path);
   if (D == 0) {
