@@ -199,7 +199,7 @@ int main(int, char**)
     State.Settings.Fullscreen = 0;
     char ResultCall[256];
     SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
-    State.Settings.Compositor = strcmp(ResultCall, "true");
+    State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;
     State.Settings.Dockspace = 1;
     State.Settings.ShowSettingsWindow = 1;
     State.Settings.ShowApplicationsWindow = 1;
