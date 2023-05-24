@@ -246,24 +246,26 @@ int main(int, char**)
             }
             if (ImGui::BeginMenu("Options"))
             {
-                if (ImGui::MenuItem("Fullscreen", 0, &State.Settings.Fullscreen))
-                {
-                    RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
-                }
-                if (ImGui::BeginMenu("Screens", State.Settings.Fullscreen))
+                if (ImGui::BeginMenu("Display"))
                 {
                     GLFWmonitor** AvailableMonitor = monitors;
                     for (int i = 0; i < MonitorCount; ++i)
                     {
                         char MonitorButton[256];
-                        sprintf(MonitorButton, "Monitor %d", i + 1);
-                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.MonitorIndex == i))
+                        sprintf(MonitorButton, "Fullscreen %d", i + 1);
+                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.Fullscreen && State.Settings.MonitorIndex == i))
                         {
+                            State.Settings.Fullscreen = 1;
                             State.Settings.MonitorIndex = i;
                             CurrentMonitor = *AvailableMonitor;
                             RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                         }
                         ++AvailableMonitor;
+                    }
+                    if (ImGui::MenuItem("Windowed", 0, State.Settings.Fullscreen == 0))
+                    {
+                        State.Settings.Fullscreen = 0;
+                        RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                     }
                     ImGui::EndMenu();
                 }
