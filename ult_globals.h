@@ -18,8 +18,7 @@ typedef uint16_t uint16;
 typedef int32_t int32;
 typedef uint32_t uint32;
 
-const int PATH_SIZE = 256;
-const int MAX_DIRS = 256;
+const int MAX_ENTRIES = 255;
 
 const char DATA_DIR[] = "data";
 const char APPLICATIONS_DIR[] = "data/applications";

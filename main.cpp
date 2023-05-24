@@ -49,8 +49,7 @@ BrowseTo(const char* Path)
 
 function void
 RefreshGraphicSettings(GLFWwindow* Window, GLFWmonitor *Monitor, ult_settings* Settings){
-    if (Settings->Fullscreen)
-    {
+    if (Settings->Fullscreen) {
         const GLFWvidmode* mode = glfwGetVideoMode(Monitor);
         glfwSetWindowMonitor(Window, Monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
         glViewport(0, 0, mode->width, mode->height);
@@ -69,51 +68,46 @@ RefreshGraphicSettings(GLFWwindow* Window, GLFWmonitor *Monitor, ult_settings* S
 }
 
 function void
-DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
+DisplayWidget(ult_config* Config)
 {
     int CurrentDirIndex = 0;
-    directory_contents** CurrentDir = Subdirectories->Directories;
-    while (CurrentDirIndex < MAX_DIRS)
-    {
-        char d_path[255];
+    ult_group** CurrentDir = Config->Groups;
+    while (CurrentDirIndex < MAX_ENTRIES) {
         if (*CurrentDir == 0)
-        {
             break;
-        }
+
         // Title
-        StringToChar(&(*CurrentDir)->Name, d_path);
+        char GroupTitle[NAME_MAX];
+        StringToChar(&(*CurrentDir)->GroupTitle, GroupTitle);
         ImGui::AlignTextToFramePadding();
-        ImGui::SeparatorText(d_path);
+        ImGui::SeparatorText(GroupTitle);
 
         // Contents (scripts or applications)
-        string* CurrentFile = (*CurrentDir)->Files;
-        for (int i = 0; i < (*CurrentDir)->FilesCount; ++i) 
-        {
-            char char_file[255];
-            StringToChar(CurrentFile, char_file);
+        ult_entry* CurrentEntry = (*CurrentDir)->Entries;
+        for (int i = 0; i < (*CurrentDir)->EntriesCount; ++i) {
+            char EntryTitle[NAME_MAX];
+            StringToChar(&CurrentEntry->EntryTitle, EntryTitle);
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f,0.5f));
-            if (IsScript)
-            {                
-                if(ImGui::Button(char_file, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
-                {
+
+            char EntryPath[PATH_MAX];
+            StringToChar(&CurrentEntry->Path, EntryPath);
+
+            // Generate run button
+            if(ImGui::Button(EntryTitle, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
+                switch (CurrentEntry->RunMode) {
+                case ult_rm_Script:                
                     char command[255];
-                    sprintf(command, "konsole -e \"sh %s/%s/%s\" &", SCRIPTS_DIR, d_path, char_file);
-                    system(command);
-                }
-            }
-            else
-            {
-                char char_file_run[255];
-                sprintf(char_file_run, "Run %s", char_file);
-                if(ImGui::Button(char_file_run,  ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
-                {
+                    sprintf(command, "konsole -e \"sh %s\" &", EntryPath);
+                    system(command);                
+                    break;
+                case ult_rm_Application:                
                     pid_t pid = fork();
                     if (pid > 0) {
                         fprintf(stderr, "Launching application using new process...\n");
                     } else if (pid == 0) {
                         fprintf(stderr, "Child process...\n");                        
                         char command[255];
-                        sprintf(command, "%s/%s/%s", APPLICATIONS_DIR, d_path, char_file);
+                        sprintf(command, "%s", EntryPath);
                         int r = execl("/bin/sh", "sh", command, 0);
                         fprintf(stderr, "%d\n", r);
                         if (r != 0) {
@@ -124,11 +118,13 @@ DisplayDirectory(subdirectories* Subdirectories, bool IsScript)
                         
                     } else {
                         fprintf(stderr, "Error creating fork\n");
-                    }
-                }            
+                    }                  
+                    break;
+                }
             }
+           
             ImGui::PopStyleVar(1);
-            ++CurrentFile;
+            ++CurrentEntry;
         }
 
         ImGui::NewLine();
@@ -197,8 +193,8 @@ int main(int, char**)
     ult_state State = {};
     State.Arena = MakeArena();
     // Load scripts and applications
-    State.Scripts = fileutils_exploreSubDirectoriesForFiles(SCRIPTS_DIR, &State.Arena);
-    State.Applications = fileutils_exploreSubDirectoriesForFiles(APPLICATIONS_DIR, &State.Arena);
+    State.Scripts = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State.Arena, ult_rm_Script);
+    State.Applications = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State.Arena, ult_rm_Application);
 
     State.Settings.Fullscreen = 0;
     char ResultCall[256];
@@ -320,18 +316,18 @@ int main(int, char**)
         if (State.Settings.ShowScriptsWindow)
         {
             ImGui::Begin("Scripts", &State.Settings.ShowScriptsWindow);       
-            DisplayDirectory(State.Scripts, 1);
+            DisplayWidget(State.Scripts);
             ImGui::End();
         }
 
         if (State.Settings.ShowApplicationsWindow)
         {
             ImGui::Begin("Applications", &State.Settings.ShowApplicationsWindow);            
-            DisplayDirectory(State.Applications, 0);
+            DisplayWidget(State.Applications);
             ImGui::End();
         }
 
-        if (ForceLayout && State.Settings.Dockspace){
+        if (ForceLayout && State.Settings.Dockspace) {
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
 		    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);            
             const ImVec2 dockspace_size = ImGui::GetContentRegionAvail();

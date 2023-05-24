@@ -3,17 +3,29 @@
 #include "ult_memory.h"
 #endif
 
-struct directory_contents {
-  string Name;
+enum ult_run_mode {
+  ult_rm_Script,
+  ult_rm_Application
+};
+
+struct ult_entry {
+  string EntryTitle;
   string Path;
-  string* Files;
-  uint32 FilesCount;
+  ult_run_mode RunMode;
 };
 
-struct subdirectories {
-   directory_contents* Directories[MAX_DIRS];
+struct ult_group {
+  string GroupTitle;
+  ult_entry* Entries;
+  uint32 EntriesCount;
 };
 
+struct ult_config {
+  string ConfigTitle;
+  ult_group* Groups[MAX_ENTRIES];
+};
+
+// todo(dacanizares): define persitance props.
 struct ult_settings {
   bool Fullscreen;
   bool Compositor;
@@ -31,8 +43,8 @@ struct ult_settings {
 
 struct ult_state {
     arena Arena;
-    subdirectories* Scripts;
-    subdirectories* Applications;
+    ult_config* Scripts;
+    ult_config* Applications;
 
     ult_settings Settings;
 };
