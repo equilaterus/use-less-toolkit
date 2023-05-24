@@ -160,11 +160,13 @@ int main(int, char**)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_AUTO_ICONIFIY, GL_FALSE);
 #else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GL_FALSE);
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
@@ -175,7 +177,7 @@ int main(int, char**)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-
+    
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -218,6 +220,8 @@ int main(int, char**)
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
 
+    static bool ForceLayout = 1;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -231,7 +235,15 @@ int main(int, char**)
         // Dockspace
         static ImGuiID dockspace_id;        
         if (ImGui::BeginMainMenuBar())
-        {            
+        { 
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Quit", 0, false))
+                {
+                    exit(0);
+                }
+                ImGui::EndMenu();
+            }
             if (ImGui::BeginMenu("Options"))
             {
                 if (ImGui::MenuItem("Fullscreen", 0, &State.Settings.Fullscreen))
@@ -263,7 +275,14 @@ int main(int, char**)
                 }
                 ImGui::Separator();
 
-                ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace);
+                if (ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace))
+                {
+                    ForceLayout = State.Settings.Dockspace;
+                }
+                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace))
+                {
+                    ForceLayout = State.Settings.Dockspace;
+                }
                 ImGui::EndMenu();
             }
             
@@ -298,13 +317,12 @@ int main(int, char**)
             ImGui::End();
         }
 
-        static bool f = 0;
-        if (!f && State.Settings.Dockspace){
+        if (ForceLayout && State.Settings.Dockspace){
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
 		    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);            
             const ImVec2 dockspace_size = ImGui::GetContentRegionAvail();
             ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
-            f = 1;
+            ForceLayout = 0;
         }
         
         ImGuiDockNode* dock_node = ImGui::DockBuilderGetNode(dockspace_id);
