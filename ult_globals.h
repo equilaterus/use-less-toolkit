@@ -23,3 +23,4 @@ const int MAX_ENTRIES = 255;
 const char DATA_DIR[] = "data";
 const char APPLICATIONS_DIR[] = "data/applications";
 const char SCRIPTS_DIR[] = "data/scripts";
+const char CUSTOM_DIR[] = "data/custom";

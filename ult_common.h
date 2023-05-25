@@ -1,6 +1,8 @@
 #ifndef NO_INCLUDES
 #include "ult_globals.h"
 #include <cstdio>
+#include <cstring>
+#include <cctype>
 #include <type_traits>
 #endif
 
@@ -63,4 +65,28 @@ SystemCall(const char * Command, char* Result)
         printf("%s\n", Result);
     }
     pclose(cmd);
+}
+
+// Note: This function returns a pointer to a substring of the original string.
+// If the given string was allocated dynamically, the caller must not overwrite
+// that pointer with the returned value, since the original pointer must be
+// deallocated using the same allocator with which it was allocated.  The return
+// value must NOT be deallocated using free() etc.
+function char*
+TrimInLine(char *S)
+{
+  // Trim leading space
+  while(isspace((unsigned char)*S)) S++;
+
+  if(*S == 0)  // All spaces?
+    return S;
+
+  // Trim trailing space
+  char *End = S + strlen(S) - 1;
+  while(End > S && isspace((unsigned char)*End)) End--;
+
+  // Write new null terminator character
+  End[1] = '\0';
+
+  return S;
 }

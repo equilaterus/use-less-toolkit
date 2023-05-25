@@ -4,6 +4,7 @@
 #endif
 
 enum ult_run_mode {
+  ult_rm_Browse,
   ult_rm_Script,
   ult_rm_Application
 };
@@ -20,6 +21,7 @@ struct ult_group {
   uint32 EntriesCount;
 };
 
+// todo(dacanizares): Groups as vector and add show window bool
 struct ult_config {
   string ConfigTitle;
   ult_group* Groups[MAX_ENTRIES];
@@ -42,9 +44,11 @@ struct ult_settings {
 };
 
 struct ult_state {
-    arena Arena;
-    ult_config* Scripts;
-    ult_config* Applications;
+  arena Arena;
+  ult_settings Settings;
+  ult_config* ScriptsConfig;
+  ult_config* ApplicationsConfig;
 
-    ult_settings Settings;
+  ult_config* CustomConfigs;
+  uint32 CustomConfigsCount;  
 };

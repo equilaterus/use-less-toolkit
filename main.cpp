@@ -1,6 +1,8 @@
+#include <linux/limits.h>
 #define NO_INCLUDES
 #include <cstdlib>
 #include <stdio.h>
+#include <cctype>
 #include <cstring>
 #include <dirent.h> 
 #include <iterator>
@@ -39,12 +41,20 @@ static void glfw_error_callback(int error, const char* description)
 function void
 BrowseTo(const char* Path)
 {
-    char char_browse[4096];
-    char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
-    sprintf(char_browse, "xdg-open %s/%s", cwd, Path);
-    fprintf(stderr, "Browse to %s", char_browse);
-    system(char_browse);
+    char Command[4096 + 32];
+    sprintf(Command, "xdg-open %s", Path);
+    fprintf(stderr, "Browsing to %s\n", Path);
+    system(Command);
+}
+
+function void
+BrowseToSubfolder(const char* Path)
+{
+    char FullPath[4096];
+    char Cwd[PATH_MAX];
+    getcwd(Cwd, sizeof(Cwd));
+    sprintf(FullPath, "%s/%s", Cwd, Path);
+    BrowseTo(FullPath);
 }
 
 function void
@@ -95,6 +105,9 @@ DisplayWidget(ult_config* Config)
             // Generate run button
             if(ImGui::Button(EntryTitle, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
                 switch (CurrentEntry->RunMode) {
+                case ult_rm_Browse:
+                    BrowseTo(EntryPath);
+                    break;
                 case ult_rm_Script:                
                     char command[255];
                     sprintf(command, "konsole -e \"sh %s\" &", EntryPath);
@@ -189,12 +202,15 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    
     // State
     ult_state State = {};
     State.Arena = MakeArena();
     // Load scripts and applications
-    State.Scripts = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State.Arena, ult_rm_Script);
-    State.Applications = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State.Arena, ult_rm_Application);
+    State.ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State.Arena, ult_rm_Script);
+    State.ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State.Arena, ult_rm_Application);
+
+    fileutils_ExploreCustomDirectory(CUSTOM_DIR, &State);
 
     State.Settings.Fullscreen = 0;
     char ResultCall[256];
@@ -233,15 +249,15 @@ int main(int, char**)
                 {
                     if (ImGui::MenuItem("data/"))
                     {
-                        BrowseTo(DATA_DIR);
+                        BrowseToSubfolder(DATA_DIR);
                     }
                     if (ImGui::MenuItem("applications/"))
                     {
-                        BrowseTo(APPLICATIONS_DIR);
+                        BrowseToSubfolder(APPLICATIONS_DIR);
                     }
                     if (ImGui::MenuItem("scripts/"))
                     {
-                        BrowseTo(SCRIPTS_DIR);
+                        BrowseToSubfolder(SCRIPTS_DIR);
                     }
                     ImGui::EndMenu();
                 }
@@ -316,15 +332,27 @@ int main(int, char**)
         if (State.Settings.ShowScriptsWindow)
         {
             ImGui::Begin("Scripts", &State.Settings.ShowScriptsWindow);       
-            DisplayWidget(State.Scripts);
+            DisplayWidget(State.ScriptsConfig);
             ImGui::End();
         }
 
         if (State.Settings.ShowApplicationsWindow)
         {
             ImGui::Begin("Applications", &State.Settings.ShowApplicationsWindow);            
-            DisplayWidget(State.Applications);
+            DisplayWidget(State.ApplicationsConfig);
             ImGui::End();
+        }
+
+        ult_config* CurrentCustomConfig = State.CustomConfigs;
+        for (int i = 0; i <  State.CustomConfigsCount; ++i) {
+            char TitleChar[NAME_MAX];
+            StringToChar(&(CurrentCustomConfig)->ConfigTitle, TitleChar);
+
+            ImGui::Begin(TitleChar);            
+            DisplayWidget(CurrentCustomConfig);
+            ImGui::End();
+
+            ++CurrentCustomConfig;
         }
 
         if (ForceLayout && State.Settings.Dockspace) {
