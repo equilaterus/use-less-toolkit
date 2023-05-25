@@ -54,6 +54,7 @@ fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], arena* 
   return Group;
 }
 
+
 function ult_config*
 fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run_mode RunMode)
 {
@@ -67,6 +68,8 @@ fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run
   int Index = 0;
   while ((DirEnt= readdir(DirStream)) != 0) {
       if(DirEnt->d_type == DT_DIR && strcmp(DirEnt->d_name,".") != 0 && strcmp(DirEnt->d_name,"..") != 0) {
+        if (strcmp(DirEnt->d_name, "custom") == 0) 
+          continue;
         char DirPath[PATH_MAX];
         sprintf(DirPath, "%s/%s", Path, DirEnt->d_name);
         Subdirectories->Groups[Index] = fileutils_GetDirectoryContents(DirPath, DirEnt->d_name, Arena, RunMode);
@@ -75,4 +78,24 @@ fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run
   }
   closedir(DirStream);
   return Subdirectories;
+}
+
+
+function ult_group*
+fileutils_ParseCustomConfigFile(char Path[PATH_MAX], char Name[NAME_MAX], arena* Arena, ult_run_mode RunMode) {
+  FILE *FileStream;
+  FileStream = fopen(Path,  "r");
+  if(FileStream == 0) {
+    fprintf(stderr, "Error opening file %s", Path);
+    return 0;
+  }
+  
+  char *Buffer = 0;
+  size_t Dummy = 0;
+  while (getline(&Buffer, &Dummy, FileStream) >= 0) {
+    fprintf(stderr, "%s", Buffer);    
+  }
+  free(Buffer);
+  fclose(FileStream);
+  return 0;
 }
