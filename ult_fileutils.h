@@ -1,12 +1,34 @@
 #ifndef NO_INCLUDES
 #include <linux/limits.h>
-#include "ult_common.h"
 #include <cstring>
 #include <dirent.h> 
 #include <iterator>
 #include <stdio.h>
 #include "ult_structs.h"
 #endif
+
+//
+// General file utils
+//
+
+inline function string
+AllocateCapitalizedString(arena *Arena, char *Data)
+{
+    char Capitalized[strlen(Data)];
+    sprintf(Capitalized, "%c%s", toupper(Data[0]), Data + 1);
+    return AllocateString(Arena, Capitalized);
+}
+
+inline function string
+AllocateStringApplyingSettings(ult_state *State, char *Data)
+{
+  if (State->Settings.ForceTitleUpperCase) {    
+    return AllocateCapitalizedString(&State->Arena, Data);
+  }
+  else {
+    return AllocateString(&State->Arena, Data);
+  }
+}
 
 function int
 fileutils_getDirectoryFileCount(const char *Path)
@@ -48,17 +70,17 @@ fileutils_getDirectorySubdirectoriesCount(const char *Path)
 //
 
 ult_group*
-fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], arena* Arena, ult_run_mode RunMode)
+fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], ult_state *State, ult_run_mode RunMode)
 {
   DIR* DirStream = opendir(Path);
   if (DirStream == 0) {
     return 0;
   }
 
-  ult_group* Group = (ult_group*)ReserveMemory(Arena, sizeof(ult_group));
-  Group->GroupTitle = AllocateString(Arena, Name);
+  ult_group* Group = (ult_group*)ReserveMemory(&State->Arena, sizeof(ult_group));
+  Group->GroupTitle = AllocateStringApplyingSettings(State, Name);
   Group->EntriesCount = fileutils_getDirectoryFileCount(Path);
-  Group->Entries = (ult_entry*)ReserveMemory(Arena, sizeof(ult_entry) * Group->EntriesCount);
+  Group->Entries = (ult_entry*)ReserveMemory(&State->Arena, sizeof(ult_entry) * Group->EntriesCount);
 
   struct dirent * DirEnt;
   ult_entry* BaseAddress = Group->Entries;
@@ -67,8 +89,8 @@ fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], arena* 
         char FullPath[PATH_MAX];
         sprintf(FullPath, "%s/%s", Path, DirEnt->d_name); 
 
-        BaseAddress->EntryTitle = AllocateString(Arena, DirEnt->d_name);
-        BaseAddress->Path = AllocateString(Arena, FullPath);
+        BaseAddress->EntryTitle = AllocateStringApplyingSettings(State, DirEnt->d_name);
+        BaseAddress->Path = AllocateString(&State->Arena, FullPath);
         BaseAddress->RunMode = RunMode;
         ++BaseAddress;
       }
@@ -79,14 +101,14 @@ fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], arena* 
 
 
 function ult_config*
-fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run_mode RunMode)
+fileutils_ExploreSubDirectoriesForConfig(const char* Path, ult_state *State, ult_run_mode RunMode)
 {
   DIR* DirStream = opendir(Path);
   if (DirStream == 0) {
     return 0;
   }
 
-  ult_config* Subdirectories = (ult_config*)ReserveMemory(Arena, sizeof(ult_config));
+  ult_config* Subdirectories = (ult_config*)ReserveMemory(&State->Arena, sizeof(ult_config));
   struct dirent* DirEnt;
   int Index = 0;
   while ((DirEnt= readdir(DirStream)) != 0) {
@@ -95,7 +117,7 @@ fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run
           continue;
         char DirPath[PATH_MAX];
         sprintf(DirPath, "%s/%s", Path, DirEnt->d_name);
-        Subdirectories->Groups[Index] = fileutils_GetDirectoryContents(DirPath, DirEnt->d_name, Arena, RunMode);
+        Subdirectories->Groups[Index] = fileutils_GetDirectoryContents(DirPath, DirEnt->d_name, State, RunMode);
         ++Index;
       }
   }
@@ -108,7 +130,7 @@ fileutils_ExploreSubDirectoriesForConfig(const char* Path, arena* Arena, ult_run
 //
 
 function ult_group*
-fileutils_ParseCustomConfigFile(char Path[PATH_MAX], arena* Arena) {
+fileutils_ParseCustomConfigFile(char Path[PATH_MAX], ult_state *State) {
   fprintf(stdout, "Found config file %s\n", Path);
   FILE *FileStream;
   FileStream = fopen(Path,  "r");
@@ -116,7 +138,7 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], arena* Arena) {
     fprintf(stderr, "Error opening file %s\n", Path);
     exit(1);
   }
-  ult_group *Group = (ult_group*)ReserveMemory(Arena, sizeof(ult_group));
+  ult_group *Group = (ult_group*)ReserveMemory(&State->Arena, sizeof(ult_group));
   
   // Read file
   char *FileContents = "";
@@ -137,7 +159,7 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], arena* Arena) {
   
   // Parse contents
   fprintf(stdout, "File loaded, trying to parse it...\n");
-  Group->Entries = (ult_entry*)ReserveMemory(Arena, sizeof(ult_entry) * Group->EntriesCount);
+  Group->Entries = (ult_entry*)ReserveMemory(&State->Arena, sizeof(ult_entry) * Group->EntriesCount);
   int CurrentIndex = -1;
   char *CurrentLine = FileContents;
   while (CurrentLine) {
@@ -154,14 +176,14 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], arena* Arena) {
       char *Value = TrimInLine(++LineValue);
       if (Property && Value) {
         if (CurrentIndex == -1) {
-          Group->GroupTitle = AllocateString(Arena, Value);
+          Group->GroupTitle = AllocateStringApplyingSettings(State, Value);
         }
         else {
           if (strcmp(Property, "EntryTitle") == 0) {
-          Group->Entries[CurrentIndex].EntryTitle = AllocateString(Arena, Value);
+            Group->Entries[CurrentIndex].EntryTitle = AllocateStringApplyingSettings(State, Value);
           } 
           else if (strcmp(Property, "Path") == 0) {
-            Group->Entries[CurrentIndex].Path = AllocateString(Arena, Value);
+            Group->Entries[CurrentIndex].Path = AllocateString(&State->Arena, Value);
           } 
           else if (strcmp(Property, "RunMode") == 0) {
             Group->Entries[CurrentIndex].RunMode = (ult_run_mode) atoi(Value);
@@ -187,7 +209,7 @@ fileutils_ExploreCustomSubdirectory(char Path[PATH_MAX], char Name[NAME_MAX], ul
     exit(1);
   }
 
-  Config->ConfigTitle = AllocateString(&State->Arena, Name);
+  Config->ConfigTitle = AllocateStringApplyingSettings(State, Name);
 
   dirent *DirEnt;
   int Index = 0;
@@ -195,7 +217,7 @@ fileutils_ExploreCustomSubdirectory(char Path[PATH_MAX], char Name[NAME_MAX], ul
       if (DirEnt->d_type != DT_DIR && strcmp(DirEnt->d_name,".") != 0 && strcmp(DirEnt->d_name,"..") != 0) {
         char DirPath[PATH_MAX];
         sprintf(DirPath, "%s/%s", Path, DirEnt->d_name);
-        Config->Groups[Index] = fileutils_ParseCustomConfigFile(DirPath, &State->Arena);
+        Config->Groups[Index] = fileutils_ParseCustomConfigFile(DirPath, State);
         ++Index;
       }
   }
@@ -230,4 +252,36 @@ fileutils_ExploreCustomDirectory(const char *Path, ult_state *State)
   }
   closedir(DirStream);
   fprintf(stdout, "End process: Exploring custom directory\n");
+}
+
+
+//
+// Settings
+//
+function void
+fileutils_LoadSettings(ult_settings *Settings)
+{
+  FILE *fptr;
+  if ((fptr = fopen("settings.bin","rb")) == NULL){
+      fprintf(stderr, "Warning: could not open settings file.\n");
+      return;
+  }
+
+  fread(Settings, sizeof(ult_settings), 1, fptr);
+  fclose(fptr);
+  fprintf(stdin, "Success: loaded settings.\n");
+}
+
+function void
+fileutils_SaveSettings(ult_settings *Settings)
+{
+  FILE *fptr;
+  if ((fptr = fopen("settings.bin","wb")) == NULL){
+      fprintf(stderr, "Error: could not save settings file.\n");
+      exit(1);
+  }
+
+  fwrite(&Settings, sizeof(ult_settings), 1, fptr);
+  fclose(fptr);
+  fprintf(stdin, "Success: saved settings.\n");
 }

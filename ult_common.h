@@ -60,9 +60,10 @@ IsLittleEndian()
 function void
 SystemCall(const char * Command, char* Result)
 {
+    fprintf(stdout, "System call: %s\n", Command);
     FILE *cmd = popen(Command, "r");
     while (fgets(Result, sizeof(Result), cmd) != 0) {
-        printf("%s\n", Result);
+        fprintf(stdout, "System call [out]: %s\n", Result);
     }
     pclose(cmd);
 }

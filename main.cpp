@@ -202,32 +202,29 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    
     // State
     ult_state State = {};
     State.Arena = MakeArena();
     // Load scripts and applications
-    State.ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State.Arena, ult_rm_Script);
-    State.ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State.Arena, ult_rm_Application);
+    State.ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State, ult_rm_Script);
+    State.ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State, ult_rm_Application);
 
     fileutils_ExploreCustomDirectory(CUSTOM_DIR, &State);
 
-    State.Settings.Fullscreen = 0;
-    char ResultCall[256];
-    SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
-    State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;
+    // Load settings
     State.Settings.Dockspace = 1;
-    State.Settings.ShowSettingsWindow = 1;
-    State.Settings.ShowApplicationsWindow = 1;
-    State.Settings.ShowScriptsWindow = 1;
-    State.Settings.ShowDemoWindow = 1;
     State.Settings.BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    fileutils_LoadSettings(&State.Settings);
+    char ResultCall[256];
+    SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
+    State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;    
+    
     int MonitorCount;
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
 
-    static bool ForceLayout = 1;
+    static bool ForceLayout = 0;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -264,7 +261,7 @@ int main(int, char**)
 
                 if (ImGui::MenuItem("Quit", 0, false))
                 {
-                    exit(0);
+                    glfwSetWindowShouldClose(window, 1);
                 }
                 ImGui::EndMenu();
             }
@@ -309,6 +306,10 @@ int main(int, char**)
                 {
                     ForceLayout = State.Settings.Dockspace;
                 }
+                if (ImGui::MenuItem("Show all windows", 0, false))
+                {
+                    state_ShowAllWindows(&State);
+                }
                 ImGui::EndMenu();
             }
             
@@ -319,26 +320,27 @@ int main(int, char**)
             dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
         // Build UI
-        if (State.Settings.ShowDemoWindow)
-           ImGui::ShowDemoWindow(&State.Settings.ShowDemoWindow);
-
-        if (State.Settings.ShowSettingsWindow)
+        // ImGui::ShowDemoWindow(&State.Settings.ShowDemoWindow);
+        int WindowIndex = 0;
+        if (State.Settings.ShowWindow[WindowIndex])
         {
-            ImGui::Begin("Settings", &State.Settings.ShowSettingsWindow);
+            ImGui::Begin("Settings", &State.Settings.ShowWindow[WindowIndex]);
             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
             ImGui::End();
         }
 
-        if (State.Settings.ShowScriptsWindow)
+        ++WindowIndex;
+        if (State.Settings.ShowWindow[WindowIndex])
         {
-            ImGui::Begin("Scripts", &State.Settings.ShowScriptsWindow);       
+            ImGui::Begin("Scripts", &State.Settings.ShowWindow[WindowIndex]);       
             DisplayWidget(State.ScriptsConfig);
             ImGui::End();
         }
 
-        if (State.Settings.ShowApplicationsWindow)
+        ++WindowIndex;
+        if (State.Settings.ShowWindow[WindowIndex])
         {
-            ImGui::Begin("Applications", &State.Settings.ShowApplicationsWindow);            
+            ImGui::Begin("Applications", &State.Settings.ShowWindow[WindowIndex]);            
             DisplayWidget(State.ApplicationsConfig);
             ImGui::End();
         }
@@ -347,10 +349,13 @@ int main(int, char**)
         for (int i = 0; i <  State.CustomConfigsCount; ++i) {
             char TitleChar[NAME_MAX];
             StringToChar(&(CurrentCustomConfig)->ConfigTitle, TitleChar);
-
-            ImGui::Begin(TitleChar);            
-            DisplayWidget(CurrentCustomConfig);
-            ImGui::End();
+            
+            ++WindowIndex;
+            if (State.Settings.ShowWindow[WindowIndex]) {
+                ImGui::Begin(TitleChar, &State.Settings.ShowWindow[WindowIndex]);            
+                DisplayWidget(CurrentCustomConfig);
+                ImGui::End();
+            }
 
             ++CurrentCustomConfig;
         }
@@ -383,6 +388,13 @@ int main(int, char**)
 
             ImGui::DockBuilderDockWindow("Settings", nodeRightUp);
             ImGui::DockBuilderDockWindow("Dear ImGui Demo", nodeRightDown);
+
+            ult_config* CurrentCustomConfig = State.CustomConfigs;
+            for (int i = 0; i <  State.CustomConfigsCount; ++i) {
+                char TitleChar[NAME_MAX];
+                StringToChar(&(CurrentCustomConfig)->ConfigTitle, TitleChar);
+                ImGui::DockBuilderDockWindow(TitleChar, nodeLeftUp);
+            }
         }
 
         // Rendering
@@ -399,6 +411,8 @@ int main(int, char**)
 
         glfwSwapBuffers(window);
     }
+
+    fileutils_SaveSettings(&State.Settings);
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();

@@ -35,10 +35,10 @@ struct ult_settings {
 
   int MonitorIndex;
 
-  bool ShowSettingsWindow;
-  bool ShowScriptsWindow;
-  bool ShowApplicationsWindow;
-  bool ShowDemoWindow;
+  bool ShowWindow[MAX_ENTRIES] = {[0 ... MAX_ENTRIES-1] = 1};
+
+  bool ForceTitleUpperCase = 1;
+  bool RemoveApplicationExt = 1;
 
   ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 };
@@ -52,3 +52,11 @@ struct ult_state {
   ult_config* CustomConfigs;
   uint32 CustomConfigsCount;  
 };
+
+void state_ShowAllWindows(ult_state *State) {
+  bool *Current = State->Settings.ShowWindow;
+  for (int i = 0; i < MAX_ENTRIES; ++i) {
+    *Current = true;
+    ++Current;
+  }
+}
