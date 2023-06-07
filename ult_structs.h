@@ -38,7 +38,7 @@ struct ult_settings {
   bool ShowWindow[MAX_ENTRIES] = {[0 ... MAX_ENTRIES-1] = 1};
 
   bool ForceTitleUpperCase = 1;
-  bool RemoveApplicationExt = 1;
+  bool RemoveFilesExt = 1;
   bool UnderscoresToSpaces = 1;
 
   ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);

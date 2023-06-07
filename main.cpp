@@ -199,14 +199,15 @@ int main(int, char**)
     // State
     ult_state State = {};
     State.Arena = MakeArena();
+
+    // Load custom settings
+    fileutils_LoadSettings(&State.Settings);
+
     // Load scripts and applications
     State.ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State, ult_rm_Script);
     State.ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State, ult_rm_Application);
 
     fileutils_ExploreCustomDirectory(CUSTOM_DIR, &State);
-
-    // Load custom settings
-    fileutils_LoadSettings(&State.Settings);
 
     // Get compositor state
     char ResultCall[256];
@@ -220,8 +221,7 @@ int main(int, char**)
     static bool ForceLayout = 0;
 
     // Main loop
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         // Start the Dear ImGui frame
@@ -231,44 +231,33 @@ int main(int, char**)
 
         // Dockspace
         static ImGuiID dockspace_id;        
-        if (ImGui::BeginMainMenuBar())
-        { 
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::BeginMenu("Open directory"))
-                {
-                    if (ImGui::MenuItem("data/"))
-                    {
+        if (ImGui::BeginMainMenuBar()) { 
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::BeginMenu("Open directory")) {
+                    if (ImGui::MenuItem("data/")) {
                         BrowseToSubfolder(DATA_DIR);
                     }
-                    if (ImGui::MenuItem("applications/"))
-                    {
+                    if (ImGui::MenuItem("applications/")) {
                         BrowseToSubfolder(APPLICATIONS_DIR);
                     }
-                    if (ImGui::MenuItem("scripts/"))
-                    {
+                    if (ImGui::MenuItem("scripts/")) {
                         BrowseToSubfolder(SCRIPTS_DIR);
                     }
                     ImGui::EndMenu();
                 }
 
-                if (ImGui::MenuItem("Quit", 0, false))
-                {
+                if (ImGui::MenuItem("Quit", 0, false)) {
                     glfwSetWindowShouldClose(window, 1);
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Options"))
-            {
-                if (ImGui::BeginMenu("Display"))
-                {
+            if (ImGui::BeginMenu("Options")) {
+                if (ImGui::BeginMenu("Display")) {
                     GLFWmonitor** AvailableMonitor = monitors;
-                    for (int i = 0; i < MonitorCount; ++i)
-                    {
+                    for (int i = 0; i < MonitorCount; ++i) {
                         char MonitorButton[256];
                         sprintf(MonitorButton, "Fullscreen %d", i + 1);
-                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.Fullscreen && State.Settings.MonitorIndex == i))
-                        {
+                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.Fullscreen && State.Settings.MonitorIndex == i)) {
                             State.Settings.Fullscreen = 1;
                             State.Settings.MonitorIndex = i;
                             CurrentMonitor = *AvailableMonitor;
@@ -276,8 +265,7 @@ int main(int, char**)
                         }
                         ++AvailableMonitor;
                     }
-                    if (ImGui::MenuItem("Windowed", 0, State.Settings.Fullscreen == 0))
-                    {
+                    if (ImGui::MenuItem("Windowed", 0, State.Settings.Fullscreen == 0)) {
                         State.Settings.Fullscreen = 0;
                         RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                     }
@@ -285,26 +273,26 @@ int main(int, char**)
                 }
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Compositor", 0, &State.Settings.Compositor))
-                {
+                if (ImGui::MenuItem("Compositor", 0, &State.Settings.Compositor)) {
                     RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                 }
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace))
-                {
+                if (ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace)) {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace))
-                {
+                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace)) {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                if (ImGui::MenuItem("Show all windows", 0, false))
-                {
+                ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[0]);
+                if (ImGui::MenuItem("Show all windows", 0, false)) {
                     state_ShowAllWindows(&State);
                 }
                 ImGui::EndMenu();
             }
+
+          
+            
             
             ImGui::EndMainMenuBar();
         }
@@ -313,26 +301,30 @@ int main(int, char**)
             dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
         // Build UI
-        // ImGui::ShowDemoWindow(&State.Settings.ShowDemoWindow);
+        //static bool Demo = 1;
+        //ImGui::ShowDemoWindow(&Demo);
         int WindowIndex = 0;
-        if (State.Settings.ShowWindow[WindowIndex])
-        {
-            ImGui::Begin("Settings", &State.Settings.ShowWindow[WindowIndex]);
+        if (State.Settings.ShowWindow[WindowIndex]) {
+            ImGui::Begin("Customization", &State.Settings.ShowWindow[WindowIndex]);
             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
+            
+            ImGui::AlignTextToFramePadding();
+            ImGui::SeparatorText("Restart to apply following changes");
+            ImGui::Checkbox("Force titles upper case", &State.Settings.ForceTitleUpperCase);
+            ImGui::Checkbox("Remove file extensions", &State.Settings.RemoveFilesExt);
+            ImGui::Checkbox("Show underscores as spaces", &State.Settings.UnderscoresToSpaces);
             ImGui::End();
         }
 
         ++WindowIndex;
-        if (State.Settings.ShowWindow[WindowIndex])
-        {
+        if (State.Settings.ShowWindow[WindowIndex]) {
             ImGui::Begin("Scripts", &State.Settings.ShowWindow[WindowIndex]);       
             DisplayWidget(State.ScriptsConfig);
             ImGui::End();
         }
 
         ++WindowIndex;
-        if (State.Settings.ShowWindow[WindowIndex])
-        {
+        if (State.Settings.ShowWindow[WindowIndex]) {
             ImGui::Begin("Applications", &State.Settings.ShowWindow[WindowIndex]);            
             DisplayWidget(State.ApplicationsConfig);
             ImGui::End();
@@ -350,17 +342,16 @@ int main(int, char**)
             ++CurrentCustomConfig;
         }
 
+        // Default docking
         if (ForceLayout && State.Settings.Dockspace) {
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
 		    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);            
             const ImVec2 dockspace_size = ImGui::GetContentRegionAvail();
             ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
             ForceLayout = 0;
-        }
-        
+        }        
         ImGuiDockNode* dock_node = ImGui::DockBuilderGetNode(dockspace_id);
-        if (dock_node && State.Settings.Dockspace && !dock_node->IsSplitNode())
-        {
+        if (dock_node && State.Settings.Dockspace && !dock_node->IsSplitNode()) {
             ImGuiID nodeLeft;
             ImGuiID nodeRight;
             ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.4f, &nodeRight, &nodeLeft);
@@ -369,19 +360,23 @@ int main(int, char**)
             ImGuiID nodeLeftDown;
             ImGui::DockBuilderSplitNode(nodeLeft, ImGuiDir_Up, 0.5f, &nodeLeftUp, &nodeLeftDown);
 
+            ImGuiID nodeLeftUpA;
+            ImGuiID nodeLeftUpB;
+            ImGui::DockBuilderSplitNode(nodeLeftUp, ImGuiDir_Right, 0.5f, &nodeLeftUpB, &nodeLeftUpA);
+
             ImGuiID nodeRightUp;
             ImGuiID nodeRightDown;
             ImGui::DockBuilderSplitNode(nodeRight, ImGuiDir_Up, 0.5f, &nodeRightUp, &nodeRightDown);
 
-            ImGui::DockBuilderDockWindow("Applications", nodeLeftUp);
+            ImGui::DockBuilderDockWindow("Applications", nodeLeftUpA);
             ImGui::DockBuilderDockWindow("Scripts", nodeLeftDown);
 
-            ImGui::DockBuilderDockWindow("Settings", nodeRightUp);
+            ImGui::DockBuilderDockWindow("Customization", nodeRightUp);
             ImGui::DockBuilderDockWindow("Dear ImGui Demo", nodeRightDown);
 
             ult_config* CurrentCustomConfig = State.CustomConfigs;
             for (int i = 0; i <  State.CustomConfigsCount; ++i) {
-                ImGui::DockBuilderDockWindow((char *)CurrentCustomConfig->ConfigTitle.Data, nodeLeftUp);
+                ImGui::DockBuilderDockWindow((char *)CurrentCustomConfig->ConfigTitle.Data, nodeLeftUpB);
             }
         }
 

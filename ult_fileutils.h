@@ -22,7 +22,7 @@ AllocateCapitalizedString(arena *Arena, char *Data)
 inline function string
 AllocateStringApplyingSettings(ult_state *State, char *Data, bool IsFile=0)
 {
-  if (IsFile && State->Settings.RemoveApplicationExt) {
+  if (IsFile && State->Settings.RemoveFilesExt) {
     RemoveExtensionInLine(Data);
   }
   if (State->Settings.UnderscoresToSpaces) {
@@ -267,6 +267,7 @@ fileutils_ExploreCustomDirectory(const char *Path, ult_state *State)
 function void
 fileutils_LoadSettings(ult_settings *Settings)
 {
+  fprintf(stdout, "Start process: loading settings.\n");
   FILE *fptr;
   if ((fptr = fopen(SETTINGS_FILE,"rb")) == NULL){
       fprintf(stderr, "Warning: could not open settings file.\n");
@@ -275,19 +276,20 @@ fileutils_LoadSettings(ult_settings *Settings)
 
   fread(Settings, sizeof(ult_settings), 1, fptr);
   fclose(fptr);
-  fprintf(stdin, "Success: loaded settings.\n");
+  fprintf(stdout, "Success: loading settings.\n");
 }
 
 function void
 fileutils_SaveSettings(ult_settings *Settings)
 {
+  fprintf(stdout, "Start process: saving settings.\n");
   FILE *fptr;
   if ((fptr = fopen(SETTINGS_FILE,"wb")) == NULL){
       fprintf(stderr, "Error: could not save settings file.\n");
       exit(1);
   }
 
-  fwrite(&Settings, sizeof(ult_settings), 1, fptr);
+  fwrite(Settings, sizeof(ult_settings), 1, fptr);
   fclose(fptr);
-  fprintf(stdin, "Success: saved settings.\n");
+  fprintf(stdout, "Success: saving settings.\n");
 }
