@@ -69,6 +69,7 @@ ReserveMemory(arena* Arena, uint32 SizeInBytes)
 inline function string
 AllocateString(arena* Arena, char* Data)
 {
-    uint8* Address = PushToMemory(Arena, Data, strlen(Data));
+    // Add +1 to store '\0' so we can send the data directly to ImGui without additional steps
+    uint8* Address = PushToMemory(Arena, Data, strlen(Data ) + 1);
     return BundleString(Address);
 }

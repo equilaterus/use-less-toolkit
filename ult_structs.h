@@ -29,16 +29,17 @@ struct ult_config {
 
 // todo(dacanizares): define persitance props.
 struct ult_settings {
-  bool Fullscreen;
-  bool Compositor;
-  bool Dockspace;
+  bool Fullscreen = 0;
+  bool Compositor = 0;
+  bool Dockspace = 1;
 
-  int MonitorIndex;
+  int MonitorIndex = 0;
 
   bool ShowWindow[MAX_ENTRIES] = {[0 ... MAX_ENTRIES-1] = 1};
 
   bool ForceTitleUpperCase = 1;
   bool RemoveApplicationExt = 1;
+  bool UnderscoresToSpaces = 1;
 
   ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 };

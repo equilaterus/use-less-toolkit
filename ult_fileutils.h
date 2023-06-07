@@ -20,8 +20,14 @@ AllocateCapitalizedString(arena *Arena, char *Data)
 }
 
 inline function string
-AllocateStringApplyingSettings(ult_state *State, char *Data)
+AllocateStringApplyingSettings(ult_state *State, char *Data, bool IsFile=0)
 {
+  if (IsFile && State->Settings.RemoveApplicationExt) {
+    RemoveExtensionInLine(Data);
+  }
+  if (State->Settings.UnderscoresToSpaces) {
+    ReplaceCharInLine(Data, '_', ' ');
+  }
   if (State->Settings.ForceTitleUpperCase) {    
     return AllocateCapitalizedString(&State->Arena, Data);
   }
@@ -89,7 +95,7 @@ fileutils_GetDirectoryContents(char Path[PATH_MAX], char Name[NAME_MAX], ult_sta
         char FullPath[PATH_MAX];
         sprintf(FullPath, "%s/%s", Path, DirEnt->d_name); 
 
-        BaseAddress->EntryTitle = AllocateStringApplyingSettings(State, DirEnt->d_name);
+        BaseAddress->EntryTitle = AllocateStringApplyingSettings(State, DirEnt->d_name, 1);
         BaseAddress->Path = AllocateString(&State->Arena, FullPath);
         BaseAddress->RunMode = RunMode;
         ++BaseAddress;
@@ -262,7 +268,7 @@ function void
 fileutils_LoadSettings(ult_settings *Settings)
 {
   FILE *fptr;
-  if ((fptr = fopen("settings.bin","rb")) == NULL){
+  if ((fptr = fopen(SETTINGS_FILE,"rb")) == NULL){
       fprintf(stderr, "Warning: could not open settings file.\n");
       return;
   }
@@ -276,7 +282,7 @@ function void
 fileutils_SaveSettings(ult_settings *Settings)
 {
   FILE *fptr;
-  if ((fptr = fopen("settings.bin","wb")) == NULL){
+  if ((fptr = fopen(SETTINGS_FILE,"wb")) == NULL){
       fprintf(stderr, "Error: could not save settings file.\n");
       exit(1);
   }

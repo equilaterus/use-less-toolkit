@@ -68,6 +68,33 @@ SystemCall(const char * Command, char* Result)
     pclose(cmd);
 }
 
+function void
+ReplaceCharInLine(char* S, char Find, char Replace)
+{    
+    while (1) {
+        S = strchr(S, Find);
+        if (!S)
+            break;
+        *S = Replace;
+    }
+}
+
+function void
+RemoveExtensionInLine(char* S) {
+    char* LastPoint = 0;
+    while (1) {
+        S = strchr(S, '.');
+        if (!S)
+            break;
+        
+        LastPoint = S;
+        ++S;
+    }
+
+    if (LastPoint)
+        LastPoint[0] = '\0';
+}
+
 // Note: This function returns a pointer to a substring of the original string.
 // If the given string was allocated dynamically, the caller must not overwrite
 // that pointer with the returned value, since the original pointer must be
@@ -76,18 +103,18 @@ SystemCall(const char * Command, char* Result)
 function char*
 TrimInLine(char *S)
 {
-  // Trim leading space
-  while(isspace((unsigned char)*S)) S++;
+    // Trim leading space
+    while(isspace((unsigned char)*S)) S++;
 
-  if(*S == 0)  // All spaces?
+    if (*S == 0)  // All spaces?
     return S;
 
-  // Trim trailing space
-  char *End = S + strlen(S) - 1;
-  while(End > S && isspace((unsigned char)*End)) End--;
+    // Trim trailing space
+    char *End = S + strlen(S) - 1;
+    while (End > S && isspace((unsigned char)*End)) End--;
 
-  // Write new null terminator character
-  End[1] = '\0';
+    // Write new null terminator character
+    End[1] = '\0';
 
-  return S;
+    return S;
 }

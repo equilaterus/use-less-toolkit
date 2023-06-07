@@ -24,3 +24,4 @@ const char DATA_DIR[] = "data";
 const char APPLICATIONS_DIR[] = "data/applications";
 const char SCRIPTS_DIR[] = "data/scripts";
 const char CUSTOM_DIR[] = "data/custom";
+const char SETTINGS_FILE[] = "settings.bin";

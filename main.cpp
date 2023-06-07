@@ -88,29 +88,23 @@ DisplayWidget(ult_config* Config)
 
         // Title
         char GroupTitle[NAME_MAX];
-        StringToChar(&(*CurrentDir)->GroupTitle, GroupTitle);
         ImGui::AlignTextToFramePadding();
-        ImGui::SeparatorText(GroupTitle);
+        ImGui::SeparatorText((char *)(*CurrentDir)->GroupTitle.Data);
 
         // Contents (scripts or applications)
         ult_entry* CurrentEntry = (*CurrentDir)->Entries;
         for (int i = 0; i < (*CurrentDir)->EntriesCount; ++i) {
-            char EntryTitle[NAME_MAX];
-            StringToChar(&CurrentEntry->EntryTitle, EntryTitle);
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f,0.5f));
 
-            char EntryPath[PATH_MAX];
-            StringToChar(&CurrentEntry->Path, EntryPath);
-
             // Generate run button
-            if(ImGui::Button(EntryTitle, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
+            if(ImGui::Button((char *)CurrentEntry->EntryTitle.Data, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
                 switch (CurrentEntry->RunMode) {
                 case ult_rm_Browse:
-                    BrowseTo(EntryPath);
+                    BrowseTo((char *)CurrentEntry->Path.Data);
                     break;
                 case ult_rm_Script:                
                     char command[255];
-                    sprintf(command, "konsole -e \"sh %s\" &", EntryPath);
+                    sprintf(command, "konsole -e \"sh %s\" &", (char *)CurrentEntry->Path.Data);
                     system(command);                
                     break;
                 case ult_rm_Application:                
@@ -120,7 +114,7 @@ DisplayWidget(ult_config* Config)
                     } else if (pid == 0) {
                         fprintf(stderr, "Child process...\n");                        
                         char command[255];
-                        sprintf(command, "%s", EntryPath);
+                        sprintf(command, "%s", (char *)CurrentEntry->Path.Data);
                         int r = execl("/bin/sh", "sh", command, 0);
                         fprintf(stderr, "%d\n", r);
                         if (r != 0) {
@@ -211,11 +205,10 @@ int main(int, char**)
 
     fileutils_ExploreCustomDirectory(CUSTOM_DIR, &State);
 
-    // Load settings
-    State.Settings.Dockspace = 1;
-    State.Settings.BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
+    // Load custom settings
     fileutils_LoadSettings(&State.Settings);
+
+    // Get compositor state
     char ResultCall[256];
     SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
     State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;    
@@ -347,12 +340,9 @@ int main(int, char**)
 
         ult_config* CurrentCustomConfig = State.CustomConfigs;
         for (int i = 0; i <  State.CustomConfigsCount; ++i) {
-            char TitleChar[NAME_MAX];
-            StringToChar(&(CurrentCustomConfig)->ConfigTitle, TitleChar);
-            
             ++WindowIndex;
             if (State.Settings.ShowWindow[WindowIndex]) {
-                ImGui::Begin(TitleChar, &State.Settings.ShowWindow[WindowIndex]);            
+                ImGui::Begin((char *)(CurrentCustomConfig)->ConfigTitle.Data, &State.Settings.ShowWindow[WindowIndex]);            
                 DisplayWidget(CurrentCustomConfig);
                 ImGui::End();
             }
@@ -391,9 +381,7 @@ int main(int, char**)
 
             ult_config* CurrentCustomConfig = State.CustomConfigs;
             for (int i = 0; i <  State.CustomConfigsCount; ++i) {
-                char TitleChar[NAME_MAX];
-                StringToChar(&(CurrentCustomConfig)->ConfigTitle, TitleChar);
-                ImGui::DockBuilderDockWindow(TitleChar, nodeLeftUp);
+                ImGui::DockBuilderDockWindow((char *)CurrentCustomConfig->ConfigTitle.Data, nodeLeftUp);
             }
         }
 
