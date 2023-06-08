@@ -9,10 +9,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-
+#define IMGUI_ENABLE_FREETYPE
 #include "imgui/imgui.cpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_demo.cpp"
+#include "imgui/misc/freetype/imgui_freetype.cpp"
 #include "imgui/imgui_draw.cpp"
 #include "imgui/imgui_tables.cpp"
 #include "imgui/imgui_widgets.cpp"
@@ -26,6 +27,8 @@
 #include "ult_fileutils.h"
 #include "ult_styles.h"
 
+#include "fonts/font-awesome.h"
+
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -33,9 +36,34 @@
 #include <GLFW/glfw3.h>
 #include <unistd.h>
 
-static void glfw_error_callback(int error, const char* description)
+function void 
+glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
+function void
+ImportDefaultFont(float BaseFontSize, bool HotReload=0) 
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImFontConfig FontConfig = {};
+    FontConfig.SizePixels = BaseFontSize;
+    FontConfig.OversampleH = 3;
+    FontConfig.OversampleV = 3;
+    //io.Fonts->AddFontFromFileTTF("fonts/VT323-Regular.ttf", BaseFontSize, &FontConfig);
+    io.Fonts->AddFontDefault(&FontConfig);
+
+    // merge in icons from Font Awesome;
+    float iconFontSize = BaseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config; 
+    icons_config.MergeMode = true; 
+    icons_config.PixelSnapH = true; 
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+    
+    if (HotReload)
+        ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 function void
@@ -181,7 +209,7 @@ int main(int, char**)
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -191,6 +219,20 @@ int main(int, char**)
     SetupImGuiStyle_ClassicSteam();
     //ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
+
+    // Fonts
+    int BaseFontSize = 13;
+    ImportDefaultFont(BaseFontSize);
+    
+    // merge in icons from Font Awesome
+    float iconFontSize = BaseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config; 
+    icons_config.MergeMode = true; 
+    icons_config.PixelSnapH = true; 
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+    // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -219,9 +261,14 @@ int main(int, char**)
     GLFWmonitor* CurrentMonitor = *monitors;
 
     static bool ForceLayout = 0;
-
+    static bool ReloadFonts = 0;
     // Main loop
     while (!glfwWindowShouldClose(window)) {
+        if (ReloadFonts) {
+            ImportDefaultFont(BaseFontSize, 1);
+            ReloadFonts = 0;
+        }
+
         glfwPollEvents();
 
         // Start the Dear ImGui frame
@@ -233,17 +280,8 @@ int main(int, char**)
         static ImGuiID dockspace_id;        
         if (ImGui::BeginMainMenuBar()) { 
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::BeginMenu("Open directory")) {
-                    if (ImGui::MenuItem("data/")) {
-                        BrowseToSubfolder(DATA_DIR);
-                    }
-                    if (ImGui::MenuItem("applications/")) {
-                        BrowseToSubfolder(APPLICATIONS_DIR);
-                    }
-                    if (ImGui::MenuItem("scripts/")) {
-                        BrowseToSubfolder(SCRIPTS_DIR);
-                    }
-                    ImGui::EndMenu();
+                if (ImGui::MenuItem("Open data directory")) {
+                    BrowseToSubfolder(DATA_DIR);
                 }
 
                 if (ImGui::MenuItem("Quit", 0, false)) {
@@ -251,7 +289,7 @@ int main(int, char**)
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Options")) {
+            if (ImGui::BeginMenu(ICON_FA_ANCHOR_LOCK " Options")) {
                 if (ImGui::BeginMenu("Display")) {
                     GLFWmonitor** AvailableMonitor = monitors;
                     for (int i = 0; i < MonitorCount; ++i) {
@@ -290,10 +328,6 @@ int main(int, char**)
                 }
                 ImGui::EndMenu();
             }
-
-          
-            
-            
             ImGui::EndMainMenuBar();
         }
         
@@ -301,12 +335,18 @@ int main(int, char**)
             dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
         // Build UI
-        //static bool Demo = 1;
-        //ImGui::ShowDemoWindow(&Demo);
+        static bool Demo = 1;
+        ImGui::ShowDemoWindow(&Demo);
         int WindowIndex = 0;
         if (State.Settings.ShowWindow[WindowIndex]) {
             ImGui::Begin("Customization", &State.Settings.ShowWindow[WindowIndex]);
             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
+            ImGui::DragFloat("Global font scale", &io.FontGlobalScale, 0.005f, 0.3f, 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+
+            ImGui::SeparatorText("Reimport font");
+            ImGui::SliderInt("Font base size", &BaseFontSize, 13, 32);
+            if (ImGui::Button("Load font"))
+                ReloadFonts = 1;
             
             ImGui::AlignTextToFramePadding();
             ImGui::SeparatorText("Restart to apply following changes");
@@ -382,6 +422,7 @@ int main(int, char**)
 
         // Rendering
         ImGui::Render();
+
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
