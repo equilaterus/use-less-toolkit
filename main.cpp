@@ -224,16 +224,6 @@ int main(int, char**)
     int BaseFontSize = 13;
     ImportDefaultFont(BaseFontSize);
     
-    // merge in icons from Font Awesome
-    float iconFontSize = BaseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    ImFontConfig icons_config; 
-    icons_config.MergeMode = true; 
-    icons_config.PixelSnapH = true; 
-    icons_config.GlyphMinAdvanceX = iconFontSize;
-    io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
-    // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
-
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
@@ -289,7 +279,7 @@ int main(int, char**)
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(ICON_FA_ANCHOR_LOCK " Options")) {
+            if (ImGui::BeginMenu(ICON_FA_GEAR " Options")) {
                 if (ImGui::BeginMenu("Display")) {
                     GLFWmonitor** AvailableMonitor = monitors;
                     for (int i = 0; i < MonitorCount; ++i) {
@@ -341,7 +331,7 @@ int main(int, char**)
         if (State.Settings.ShowWindow[WindowIndex]) {
             ImGui::Begin("Customization", &State.Settings.ShowWindow[WindowIndex]);
             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
-            ImGui::DragFloat("Global font scale", &io.FontGlobalScale, 0.005f, 0.3f, 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::DragFloat("Global font scale", &io.FontGlobalScale, 0.005f, 1.0f, 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
 
             ImGui::SeparatorText("Reimport font");
             ImGui::SliderInt("Font base size", &BaseFontSize, 13, 32);
