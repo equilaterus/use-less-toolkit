@@ -25,7 +25,7 @@ MakeString(uint8* Address, int32 Size)
 }
 
 inline function void
-StringToChar(string* S, char* C) 
+StringToChar(string* S, char* C)
 {
     snprintf(C, S->Size + 1, "%s", S->Data);
 }
@@ -62,7 +62,8 @@ SystemCall(const char * Command, char* Result)
 {
     fprintf(stdout, "System call: %s\n", Command);
     FILE *cmd = popen(Command, "r");
-    while (fgets(Result, sizeof(Result), cmd) != 0) {
+    while (fgets(Result, sizeof(Result), cmd) != 0)
+    {
         fprintf(stdout, "System call [out]: %s\n", Result);
     }
     pclose(cmd);
@@ -70,8 +71,9 @@ SystemCall(const char * Command, char* Result)
 
 function void
 ReplaceCharInLine(char* S, char Find, char Replace)
-{    
-    while (1) {
+{
+    while (1)
+    {
         S = strchr(S, Find);
         if (!S)
             break;
@@ -80,13 +82,15 @@ ReplaceCharInLine(char* S, char Find, char Replace)
 }
 
 function void
-RemoveExtensionInLine(char* S) {
+RemoveExtensionInLine(char* S)
+{
     char* LastPoint = 0;
-    while (1) {
+    while (1)
+    {
         S = strchr(S, '.');
         if (!S)
             break;
-        
+
         LastPoint = S;
         ++S;
     }
@@ -107,11 +111,12 @@ TrimInLine(char *S)
     while(isspace((unsigned char)*S)) S++;
 
     if (*S == 0)  // All spaces?
-    return S;
+        return S;
 
     // Trim trailing space
     char *End = S + strlen(S) - 1;
-    while (End > S && isspace((unsigned char)*End)) End--;
+    while (End > S && isspace((unsigned char)*End))
+        End--;
 
     // Write new null terminator character
     End[1] = '\0';

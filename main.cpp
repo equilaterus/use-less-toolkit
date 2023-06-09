@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <cctype>
 #include <cstring>
-#include <dirent.h> 
+#include <dirent.h>
 #include <iterator>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -39,14 +39,14 @@
 #include <GLFW/glfw3.h>
 #include <unistd.h>
 
-function void 
+function void
 glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 function void
-ImportDefaultFont(float BaseFontSize, bool HotReload=0) 
+ImportDefaultFont(float BaseFontSize, bool HotReload=0)
 {
     ImGuiIO& io = ImGui::GetIO();
     ImFontConfig FontConfig = {};
@@ -59,12 +59,12 @@ ImportDefaultFont(float BaseFontSize, bool HotReload=0)
     // merge in icons from Font Awesome;
     float iconFontSize = BaseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    ImFontConfig icons_config; 
-    icons_config.MergeMode = true; 
-    icons_config.PixelSnapH = true; 
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
     icons_config.GlyphMinAdvanceX = iconFontSize;
     io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
-    
+
     if (HotReload)
         ImGui_ImplOpenGL3_CreateFontsTexture();
 }
@@ -90,20 +90,24 @@ BrowseToSubfolder(const char* Path)
 
 function void
 RefreshGraphicSettings(GLFWwindow* Window, GLFWmonitor *Monitor, ult_settings* Settings){
-    if (Settings->Fullscreen) {
+    if (Settings->Fullscreen)
+    {
         const GLFWvidmode* mode = glfwGetVideoMode(Monitor);
         glfwSetWindowMonitor(Window, Monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
         glViewport(0, 0, mode->width, mode->height);
     }
-    else {
+    else
+    {
         glfwSetWindowMonitor(Window, 0, 100, 100, 1280, 720, GLFW_DONT_CARE);
         glViewport(0, 0, 1280, 820);
     }
 
-    if (Settings->Compositor){
+    if (Settings->Compositor)
+    {
         system("qdbus org.kde.KWin /Compositor resume");
     }
-    else {
+    else
+    {
         system("qdbus org.kde.KWin /Compositor suspend");
     }
 }
@@ -124,43 +128,49 @@ DisplayWidget(ult_config* Config)
 
         // Contents (scripts or applications)
         ult_entry* CurrentEntry = (*CurrentDir)->Entries;
-        for (int i = 0; i < (*CurrentDir)->EntriesCount; ++i) {
+        for (int i = 0; i < (*CurrentDir)->EntriesCount; ++i)
+        {
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f,0.5f));
 
             // Generate run button
-            if(ImGui::Button((char *)CurrentEntry->EntryTitle.Data, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
-                switch (CurrentEntry->RunMode) {
+            if(ImGui::Button((char *)CurrentEntry->EntryTitle.Data, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
+            {
+                switch (CurrentEntry->RunMode)
+                {
                 case ult_rm_Browse:
                     BrowseTo((char *)CurrentEntry->Path.Data);
                     break;
-                case ult_rm_Script:                
+                case ult_rm_Script:
                     char command[255];
                     sprintf(command, "konsole -e \"sh %s\" &", (char *)CurrentEntry->Path.Data);
-                    system(command);                
+                    system(command);
                     break;
-                case ult_rm_Application:                
+                case ult_rm_Application:
                     pid_t pid = fork();
-                    if (pid > 0) {
+                    if (pid > 0)
+                    {
                         fprintf(stderr, "Launching application using new process...\n");
                     } else if (pid == 0) {
-                        fprintf(stderr, "Child process...\n");                        
+                        fprintf(stderr, "Child process...\n");
                         char command[255];
                         sprintf(command, "%s", (char *)CurrentEntry->Path.Data);
                         int r = execl("/bin/sh", "sh", command, 0);
                         fprintf(stderr, "%d\n", r);
-                        if (r != 0) {
+                        if (r != 0)
+                        {
                             exit(EXIT_FAILURE);
                         } else {
                             exit(EXIT_SUCCESS);
                         }
-                        
-                    } else {
+
+                    } else
+                    {
                         fprintf(stderr, "Error creating fork\n");
-                    }                  
+                    }
                     break;
                 }
             }
-           
+
             ImGui::PopStyleVar(1);
             ++CurrentEntry;
         }
@@ -204,11 +214,11 @@ int main(int, char**)
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-    GLFWimage images[1]; 
-    images[0].pixels = stbi_load("assets/icon.png", &images[0].width, &images[0].height, 0, 4); //rgba channels 
-    glfwSetWindowIcon(window, 1, images); 
+    GLFWimage images[1];
+    images[0].pixels = stbi_load("assets/icon.png", &images[0].width, &images[0].height, 0, 4); //rgba channels
+    glfwSetWindowIcon(window, 1, images);
     stbi_image_free(images[0].pixels);
-    
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -226,7 +236,7 @@ int main(int, char**)
     // Fonts
     int BaseFontSize = 13;
     ImportDefaultFont(BaseFontSize);
-    
+
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
@@ -247,8 +257,8 @@ int main(int, char**)
     // Get compositor state
     char ResultCall[256];
     SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
-    State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;    
-    
+    State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;
+
     int MonitorCount;
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
@@ -256,8 +266,10 @@ int main(int, char**)
     static bool ForceLayout = 0;
     static bool ReloadFonts = 0;
     // Main loop
-    while (!glfwWindowShouldClose(window)) {
-        if (ReloadFonts) {
+    while (!glfwWindowShouldClose(window))
+    {
+        if (ReloadFonts)
+        {
             ImportDefaultFont(BaseFontSize, 1);
             ReloadFonts = 0;
         }
@@ -269,26 +281,33 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Dockspace
-        static ImGuiID dockspace_id;        
-        if (ImGui::BeginMainMenuBar()) { 
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Open data directory")) {
+        // Menu
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Open data directory"))
+                {
                     BrowseToSubfolder(DATA_DIR);
                 }
 
-                if (ImGui::MenuItem("Quit", 0, false)) {
+                if (ImGui::MenuItem("Quit", 0, false))
+                {
                     glfwSetWindowShouldClose(window, 1);
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(ICON_FA_GEAR " Options")) {
-                if (ImGui::BeginMenu("Display")) {
+            if (ImGui::BeginMenu(ICON_FA_GEAR " Options"))
+            {
+                if (ImGui::BeginMenu("Display"))
+                {
                     GLFWmonitor** AvailableMonitor = monitors;
-                    for (int i = 0; i < MonitorCount; ++i) {
+                    for (int i = 0; i < MonitorCount; ++i)
+                    {
                         char MonitorButton[256];
                         sprintf(MonitorButton, "Fullscreen %d", i + 1);
-                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.Fullscreen && State.Settings.MonitorIndex == i)) {
+                        if (ImGui::MenuItem(MonitorButton, 0, State.Settings.Fullscreen && State.Settings.MonitorIndex == i))
+                        {
                             State.Settings.Fullscreen = 1;
                             State.Settings.MonitorIndex = i;
                             CurrentMonitor = *AvailableMonitor;
@@ -296,7 +315,8 @@ int main(int, char**)
                         }
                         ++AvailableMonitor;
                     }
-                    if (ImGui::MenuItem("Windowed", 0, State.Settings.Fullscreen == 0)) {
+                    if (ImGui::MenuItem("Windowed", 0, State.Settings.Fullscreen == 0))
+                    {
                         State.Settings.Fullscreen = 0;
                         RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                     }
@@ -304,7 +324,8 @@ int main(int, char**)
                 }
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Compositor", 0, &State.Settings.Compositor)) {
+                if (ImGui::MenuItem("Compositor", 0, &State.Settings.Compositor))
+                {
                     RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
                 }
                 ImGui::Separator();
@@ -312,26 +333,32 @@ int main(int, char**)
                 if (ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace)) {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace)) {
+                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace))
+                {
                     ForceLayout = State.Settings.Dockspace;
                 }
                 ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[0]);
-                if (ImGui::MenuItem("Show all windows", 0, false)) {
+                if (ImGui::MenuItem("Show all windows", 0, false))
+                {
                     state_ShowAllWindows(&State);
                 }
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
         }
-        
+
+        // Dockspace
+        static ImGuiID dockspace_id;
         if (State.Settings.Dockspace)
             dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-        
+
         // Build UI
-        static bool Demo = 1;
-        ImGui::ShowDemoWindow(&Demo);
         int WindowIndex = 0;
-        if (State.Settings.ShowWindow[WindowIndex]) {
+        ImGui::ShowDemoWindow(&State.Settings.ShowWindow[WindowIndex]);
+
+        ++WindowIndex;
+        if (State.Settings.ShowWindow[WindowIndex])
+        {
             ImGui::Begin("Customization", &State.Settings.ShowWindow[WindowIndex]);
             ImGui::ColorEdit3("Background color", (float*)&State.Settings.BgColor);
             ImGui::DragFloat("Global font scale", &io.FontGlobalScale, 0.005f, 1.0f, 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
@@ -340,7 +367,7 @@ int main(int, char**)
             ImGui::SliderInt("Font base size", &BaseFontSize, 13, 32);
             if (ImGui::Button("Load font"))
                 ReloadFonts = 1;
-            
+
             ImGui::AlignTextToFramePadding();
             ImGui::SeparatorText("Restart to apply following changes");
             ImGui::Checkbox("Force titles upper case", &State.Settings.ForceTitleUpperCase);
@@ -350,24 +377,28 @@ int main(int, char**)
         }
 
         ++WindowIndex;
-        if (State.Settings.ShowWindow[WindowIndex]) {
-            ImGui::Begin("Scripts", &State.Settings.ShowWindow[WindowIndex]);       
+        if (State.Settings.ShowWindow[WindowIndex])
+        {
+            ImGui::Begin("Scripts", &State.Settings.ShowWindow[WindowIndex]);
             DisplayWidget(State.ScriptsConfig);
             ImGui::End();
         }
 
         ++WindowIndex;
-        if (State.Settings.ShowWindow[WindowIndex]) {
-            ImGui::Begin("Applications", &State.Settings.ShowWindow[WindowIndex]);            
+        if (State.Settings.ShowWindow[WindowIndex])
+        {
+            ImGui::Begin("Applications", &State.Settings.ShowWindow[WindowIndex]);
             DisplayWidget(State.ApplicationsConfig);
             ImGui::End();
         }
 
         ult_config* CurrentCustomConfig = State.CustomConfigs;
-        for (int i = 0; i <  State.CustomConfigsCount; ++i) {
+        for (int i = 0; i <  State.CustomConfigsCount; ++i)
+        {
             ++WindowIndex;
-            if (State.Settings.ShowWindow[WindowIndex]) {
-                ImGui::Begin((char *)(CurrentCustomConfig)->ConfigTitle.Data, &State.Settings.ShowWindow[WindowIndex]);            
+            if (State.Settings.ShowWindow[WindowIndex])
+            {
+                ImGui::Begin((char *)(CurrentCustomConfig)->ConfigTitle.Data, &State.Settings.ShowWindow[WindowIndex]);
                 DisplayWidget(CurrentCustomConfig);
                 ImGui::End();
             }
@@ -376,15 +407,17 @@ int main(int, char**)
         }
 
         // Default docking
-        if (ForceLayout && State.Settings.Dockspace) {
+        if (ForceLayout && State.Settings.Dockspace)
+        {
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-		    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);            
+		    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
             const ImVec2 dockspace_size = ImGui::GetContentRegionAvail();
             ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
             ForceLayout = 0;
-        }        
+        }
         ImGuiDockNode* dock_node = ImGui::DockBuilderGetNode(dockspace_id);
-        if (dock_node && State.Settings.Dockspace && !dock_node->IsSplitNode()) {
+        if (dock_node && State.Settings.Dockspace && !dock_node->IsSplitNode())
+        {
             ImGuiID nodeLeft;
             ImGuiID nodeRight;
             ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.4f, &nodeRight, &nodeLeft);
@@ -419,9 +452,9 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(State.Settings.BgColor.x * State.Settings.BgColor.w, 
-         State.Settings.BgColor.y * State.Settings.BgColor.w, 
-         State.Settings.BgColor.z * State.Settings.BgColor.w, 
+        glClearColor(State.Settings.BgColor.x * State.Settings.BgColor.w,
+         State.Settings.BgColor.y * State.Settings.BgColor.w,
+         State.Settings.BgColor.z * State.Settings.BgColor.w,
          State.Settings.BgColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
