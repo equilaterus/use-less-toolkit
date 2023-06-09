@@ -1,5 +1,8 @@
 #ifndef NO_INCLUDES
 #include <linux/limits.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <cstring>
 #include <dirent.h> 
 #include <iterator>
@@ -50,6 +53,7 @@ fileutils_getDirectoryFileCount(const char *Path)
       if(dir->d_type != DT_DIR) 
         count++;
   }
+  closedir(D);
   return count;
 }
 
@@ -67,6 +71,7 @@ fileutils_getDirectorySubdirectoriesCount(const char *Path)
       if(DirEnt->d_type == DT_DIR && strcmp(DirEnt->d_name,".") != 0 && strcmp(DirEnt->d_name,"..") != 0) 
         Count++;
   }
+  closedir(D);
   return Count;
 }
 
@@ -147,18 +152,17 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], ult_state *State) {
   ult_group *Group = (ult_group*)ReserveMemory(&State->Arena, sizeof(ult_group));
   
   // Read file
-  char *FileContents = "";
+  struct stat FileStat;
+  stat(Path, &FileStat);
+
+  char *FileContents = (char*)calloc(1, FileStat.st_size);
   char *Buffer = 0;
   size_t Dummy = 0;
   while (getline(&Buffer, &Dummy, FileStream) != -1) {
     if (Buffer[0] == '[') {
       ++Group->EntriesCount;
     }
-
-    if (asprintf(&FileContents, "%s%s", FileContents, Buffer) == -1) {
-      fprintf(stderr, "Error reading file! asprintf failed\n");
-      exit(1);
-    }
+    strcat(FileContents, Buffer);
   }
   free(Buffer);
   fclose(FileStream);
@@ -223,6 +227,7 @@ fileutils_ExploreCustomSubdirectory(char Path[PATH_MAX], char Name[NAME_MAX], ul
       if (DirEnt->d_type != DT_DIR && strcmp(DirEnt->d_name,".") != 0 && strcmp(DirEnt->d_name,"..") != 0) {
         char DirPath[PATH_MAX];
         sprintf(DirPath, "%s/%s", Path, DirEnt->d_name);
+        
         Config->Groups[Index] = fileutils_ParseCustomConfigFile(DirPath, State);
         ++Index;
       }
@@ -241,7 +246,7 @@ fileutils_ExploreCustomDirectory(const char *Path, ult_state *State)
     exit(1);
   }
 
-  fprintf(stdout, "Custom directories %d\n", fileutils_getDirectoryFileCount(Path));
+  fprintf(stdout, "Custom directories %d\n", fileutils_getDirectorySubdirectoriesCount(Path));
   State->CustomConfigsCount = fileutils_getDirectorySubdirectoriesCount(Path);
   State->CustomConfigs = (ult_config*)ReserveMemory(&State->Arena, sizeof(ult_config) * State->CustomConfigsCount);
   

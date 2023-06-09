@@ -2,6 +2,9 @@
 #define NO_INCLUDES
 #include <cstdlib>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <cctype>
 #include <cstring>
 #include <dirent.h> 
