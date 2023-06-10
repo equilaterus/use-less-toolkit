@@ -10,11 +10,12 @@
    * [fa-solid-900](https://github.com/FortAwesome/Font-Awesome/blob/6.x/webfonts/fa-solid-900.ttf)
 
 2. Install these packages:
-```bash
-sudo dnf install clang
-sudo dnf install freetype-devel
-sudo dnf install glfw-devel
-```
+
+   ```bash
+   sudo dnf install clang
+   sudo dnf install freetype-devel
+   sudo dnf install glfw-devel
+   ```
 
 3. Install **clangd** extension for VSCode (or VSCodium).
 

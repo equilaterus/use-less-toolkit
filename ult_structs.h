@@ -47,7 +47,8 @@ struct ult_settings
     ImVec4 BgColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 };
 
-struct ult_state {
+struct ult_state
+{
     arena Arena;
     ult_settings Settings;
     ult_config* ScriptsConfig;

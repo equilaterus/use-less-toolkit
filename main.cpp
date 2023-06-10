@@ -72,7 +72,7 @@ ImportDefaultFont(float BaseFontSize, bool HotReload=0)
 function void
 BrowseTo(const char* Path)
 {
-    char Command[4096 + 32];
+    char Command[PATH_MAX + 32];
     sprintf(Command, "xdg-open %s", Path);
     fprintf(stderr, "Browsing to %s\n", Path);
     system(Command);
@@ -81,7 +81,7 @@ BrowseTo(const char* Path)
 function void
 BrowseToSubfolder(const char* Path)
 {
-    char FullPath[4096];
+    char FullPath[PATH_MAX];
     char Cwd[PATH_MAX];
     getcwd(Cwd, sizeof(Cwd));
     sprintf(FullPath, "%s/%s", Cwd, Path);
@@ -150,7 +150,8 @@ DisplayWidget(ult_config* Config)
                     if (pid > 0)
                     {
                         fprintf(stderr, "Launching application using new process...\n");
-                    } else if (pid == 0) {
+                    }
+                    else if (pid == 0) {
                         fprintf(stderr, "Child process...\n");
                         char command[255];
                         sprintf(command, "%s", (char *)CurrentEntry->Path.Data);
@@ -159,11 +160,14 @@ DisplayWidget(ult_config* Config)
                         if (r != 0)
                         {
                             exit(EXIT_FAILURE);
-                        } else {
+                        }
+                        else
+                        {
                             exit(EXIT_SUCCESS);
                         }
 
-                    } else
+                    }
+                    else
                     {
                         fprintf(stderr, "Error creating fork\n");
                     }
