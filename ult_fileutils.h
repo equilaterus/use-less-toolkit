@@ -195,36 +195,39 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], ult_state *State) {
         if (NextLine)
             *NextLine = '\0';
 
-        // Parse line
-        if (CurrentLine[0] == '[')
+        if (strlen(CurrentLine) > 0)
         {
-            ++CurrentIndex;
-        }
-        else
-        {
-            char *LineValue = strchr(CurrentLine, '=');
-            if (LineValue) *LineValue = '\0';
-            char *Property = TrimInLine(CurrentLine);
-            char *Value = TrimInLine(++LineValue);
-            if (Property && Value)
+            // Parse line
+            if (CurrentLine[0] == '[')
             {
-                if (CurrentIndex == -1)
+                ++CurrentIndex;
+            }
+            else
+            {
+                char *LineValue = strchr(CurrentLine, '=');
+                if (LineValue) *LineValue = '\0';
+                char *Property = TrimInLine(CurrentLine);
+                char *Value = TrimInLine(++LineValue);
+                if (Property && Value)
                 {
-                    Group->GroupTitle = AllocateStringApplyingSettings(State, Value);
-                }
-                else
-                {
-                    if (strcmp(Property, "EntryTitle") == 0)
+                    if (CurrentIndex == -1)
                     {
-                        Group->Entries[CurrentIndex].EntryTitle = AllocateStringApplyingSettings(State, Value);
+                        Group->GroupTitle = AllocateStringApplyingSettings(State, Value);
                     }
-                    else if (strcmp(Property, "Path") == 0)
+                    else
                     {
-                        Group->Entries[CurrentIndex].Path = AllocateString(&State->Arena, Value);
-                    }
-                    else if (strcmp(Property, "RunMode") == 0)
-                    {
-                        Group->Entries[CurrentIndex].RunMode = (ult_run_mode) atoi(Value);
+                        if (strcmp(Property, "EntryTitle") == 0)
+                        {
+                            Group->Entries[CurrentIndex].EntryTitle = AllocateStringApplyingSettings(State, Value);
+                        }
+                        else if (strcmp(Property, "Path") == 0)
+                        {
+                            Group->Entries[CurrentIndex].Path = AllocateString(&State->Arena, Value);
+                        }
+                        else if (strcmp(Property, "RunMode") == 0)
+                        {
+                            Group->Entries[CurrentIndex].RunMode = (ult_run_mode) atoi(Value);
+                        }
                     }
                 }
             }

@@ -447,6 +447,7 @@ int main(int, char**)
             ult_config* CurrentCustomConfig = State.CustomConfigs;
             for (int i = 0; i <  State.CustomConfigsCount; ++i) {
                 ImGui::DockBuilderDockWindow((char *)CurrentCustomConfig->ConfigTitle.Data, nodeLeftUpB);
+                ++CurrentCustomConfig;
             }
         }
 
