@@ -205,7 +205,10 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], ult_state *State) {
             else
             {
                 char *LineValue = strchr(CurrentLine, '=');
-                if (LineValue) *LineValue = '\0';
+                if (LineValue)
+                {
+                    *LineValue = '\0';
+                }
                 char *Property = TrimInLine(CurrentLine);
                 char *Value = TrimInLine(++LineValue);
                 if (Property && Value)
