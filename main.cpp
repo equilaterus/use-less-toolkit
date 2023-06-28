@@ -369,14 +369,19 @@ int main(int, char**)
 
             ImGui::SeparatorText("Reimport font");
             ImGui::SliderInt("Font base size", &BaseFontSize, 13, 32);
-            if (ImGui::Button("Load font"))
+            if (ImGui::Button("Reimport"))
                 ReloadFonts = 1;
+
+            ImGui::ShowFontSelector("Font");
 
             ImGui::AlignTextToFramePadding();
             ImGui::SeparatorText("Restart to apply following changes");
             ImGui::Checkbox("Force titles upper case", &State.Settings.ForceTitleUpperCase);
             ImGui::Checkbox("Remove file extensions", &State.Settings.RemoveFilesExt);
             ImGui::Checkbox("Show underscores as spaces", &State.Settings.UnderscoresToSpaces);
+
+            if (ImGui::Button("Exit"))
+                exit(0);
             ImGui::End();
         }
 
