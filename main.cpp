@@ -135,13 +135,15 @@ DisplayWidget(ult_config* Config)
             // Generate run button
             if(ImGui::Button((char *)CurrentEntry->EntryTitle.Data, ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
             {
+                fprintf(stdout, "Executing action with path: %s\n", (char *)CurrentEntry->Path.Data);
+                fprintf(stdout, "Run mode: %d\n", CurrentEntry->RunMode);
                 switch (CurrentEntry->RunMode)
                 {
                 case ult_rm_Browse:
                     BrowseTo((char *)CurrentEntry->Path.Data);
                     break;
                 case ult_rm_Script:
-                    char command[255];
+                    char command[PATH_MAX + 32];
                     sprintf(command, "konsole -e \"sh %s\" &", (char *)CurrentEntry->Path.Data);
                     system(command);
                     break;
@@ -153,7 +155,7 @@ DisplayWidget(ult_config* Config)
                     }
                     else if (pid == 0) {
                         fprintf(stderr, "Child process...\n");
-                        char command[255];
+                        char command[PATH_MAX + 32];
                         sprintf(command, "%s", (char *)CurrentEntry->Path.Data);
                         int r = execl("/bin/sh", "sh", command, 0);
                         fprintf(stderr, "%d\n", r);
