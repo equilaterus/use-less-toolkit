@@ -341,7 +341,8 @@ int main(int, char**)
                 {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[0]);
+                ImGui::MenuItem("Demo window", 0, &State.Settings.ShowWindow[0]);
+                ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[1]);
                 if (ImGui::MenuItem("Show all windows", 0, false))
                 {
                     state_ShowAllWindows(&State);
@@ -358,7 +359,10 @@ int main(int, char**)
 
         // Build UI
         int WindowIndex = 0;
-        ImGui::ShowDemoWindow(&State.Settings.ShowWindow[WindowIndex]);
+        if (State.Settings.ShowWindow[WindowIndex])
+        {
+            ImGui::ShowDemoWindow(&State.Settings.ShowWindow[WindowIndex]);
+        }
 
         ++WindowIndex;
         if (State.Settings.ShowWindow[WindowIndex])
