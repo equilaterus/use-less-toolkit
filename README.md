@@ -1,5 +1,7 @@
 # Use-Less-Toolkit for Linux
 
+**Use-Less-Toolkit** is a configurable UI to launch your favorite scripts, applications and locations, everything on a single useless application for lazy people that does not like writing commands on the terminal (or those ones that tend to forget everything).
+
 ## Quick start
 
 ### Fedora
