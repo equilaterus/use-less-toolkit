@@ -74,7 +74,7 @@ BrowseTo(const char* Path)
 {
     char Command[PATH_MAX + 32];
     sprintf(Command, "xdg-open %s", Path);
-    fprintf(stderr, "Browsing to %s\n", Path);
+    fprintf(stdout, "Browsing to %s\n", Path);
     system(Command);
 }
 
@@ -151,14 +151,14 @@ DisplayWidget(ult_config* Config)
                     pid_t pid = fork();
                     if (pid > 0)
                     {
-                        fprintf(stderr, "Launching application using new process...\n");
+                        fprintf(stdout, "Launching application using new process...\n");
                     }
                     else if (pid == 0) {
-                        fprintf(stderr, "Child process...\n");
+                        fprintf(stdout, "Child process...\n");
                         char command[PATH_MAX + 32];
                         sprintf(command, "%s", (char *)CurrentEntry->Path.Data);
                         int r = execl("/bin/sh", "sh", command, 0);
-                        fprintf(stderr, "%d\n", r);
+                        fprintf(stdout, "%d\n", r);
                         if (r != 0)
                         {
                             exit(EXIT_FAILURE);
@@ -171,7 +171,7 @@ DisplayWidget(ult_config* Config)
                     }
                     else
                     {
-                        fprintf(stderr, "Error creating fork\n");
+                        fprintf(stdout, "Error creating fork\n");
                     }
                     break;
                 }
@@ -265,6 +265,11 @@ int main(int, char**)
     SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
     State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;
 
+    // Allocate log
+    char* log_buffer = (char*)ReserveMemory(&State.Arena, Megabytes(90));
+    freopen("/dev/null", "a", stdout);
+    setbuf(stdout, log_buffer);
+
     int MonitorCount;
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
@@ -345,6 +350,7 @@ int main(int, char**)
                 }
                 ImGui::MenuItem("Demo window", 0, &State.Settings.ShowWindow[0]);
                 ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[1]);
+                ImGui::MenuItem("Log window", 0, &State.Settings.ShowWindow[2]);
                 if (ImGui::MenuItem("Show all windows", 0, false))
                 {
                     state_ShowAllWindows(&State);
@@ -388,6 +394,33 @@ int main(int, char**)
 
             if (ImGui::Button("Exit"))
                 exit(0);
+            ImGui::End();
+        }
+
+        ++WindowIndex;
+        if (State.Settings.ShowWindow[WindowIndex])
+        {
+            ImGui::Begin("Log", &State.Settings.ShowWindow[WindowIndex]);
+
+            ImGui::SeparatorText("Log");
+            if (ImGui::Button("Copy"))
+            {
+                ImGui::SetClipboardText(log_buffer);
+            }
+            if (ImGui::BeginChild("ult_log", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
+            {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+                ImGui::TextUnformatted(log_buffer);
+                ImGui::PopStyleVar();
+
+                // Keep up at the bottom of the scroll region if we were already at the bottom at the beginning of the frame.
+                // Using a scrollbar or mouse-wheel will take away from the bottom edge.
+                if ( ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+
+            }
+            ImGui::EndChild();
             ImGui::End();
         }
 
@@ -452,8 +485,8 @@ int main(int, char**)
             ImGui::DockBuilderDockWindow("Applications", nodeLeftUpA);
             ImGui::DockBuilderDockWindow("Scripts", nodeLeftDown);
 
-            ImGui::DockBuilderDockWindow("Customization", nodeRightUp);
-            ImGui::DockBuilderDockWindow("Dear ImGui Demo", nodeRightDown);
+            ImGui::DockBuilderDockWindow("Log", nodeRightUp);
+            ImGui::DockBuilderDockWindow("Customization", nodeRightDown);
 
             ult_config* CurrentCustomConfig = State.CustomConfigs;
             for (int i = 0; i <  State.CustomConfigsCount; ++i) {

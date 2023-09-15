@@ -162,7 +162,7 @@ fileutils_ParseCustomConfigFile(char Path[PATH_MAX], ult_state *State) {
     FileStream = fopen(Path,  "r");
     if(FileStream == 0)
     {
-        fprintf(stderr, "Error opening file %s\n", Path);
+        fprintf(stdout, "Error opening file %s\n", Path);
         exit(1);
     }
     ult_group *Group = (ult_group*)ReserveMemory(&State->Arena, sizeof(ult_group));
@@ -282,7 +282,7 @@ fileutils_ExploreCustomDirectory(const char *Path, ult_state *State)
     DIR* DirStream = opendir(Path);
     if (DirStream == 0)
     {
-        fprintf(stderr, "Error opening custom directory\n");
+        fprintf(stdout, "Error opening custom directory\n");
         exit(1);
     }
 
@@ -318,7 +318,7 @@ fileutils_LoadSettings(ult_settings *Settings)
     FILE *fptr;
     if ((fptr = fopen(SETTINGS_FILE,"rb")) == NULL)
     {
-        fprintf(stderr, "Warning: could not open settings file.\n");
+        fprintf(stdout, "Warning: could not open settings file.\n");
         return;
     }
 
@@ -334,7 +334,7 @@ fileutils_SaveSettings(ult_settings *Settings)
     FILE *fptr;
     if ((fptr = fopen(SETTINGS_FILE,"wb")) == NULL)
     {
-        fprintf(stderr, "Error: could not save settings file.\n");
+        fprintf(stdout, "Error: could not save settings file.\n");
         exit(1);
     }
 
