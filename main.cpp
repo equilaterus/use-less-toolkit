@@ -102,13 +102,15 @@ RefreshGraphicSettings(GLFWwindow* Window, GLFWmonitor *Monitor, ult_settings* S
         glViewport(0, 0, 1280, 820);
     }
 
-    if (Settings->Compositor)
+    if (!Settings->Compositor)
     {
         system("qdbus org.kde.KWin /Compositor resume");
+        Settings->Compositor = 1;
     }
     else
     {
         system("qdbus org.kde.KWin /Compositor suspend");
+        Settings->Compositor = 0;
     }
 }
 
@@ -264,6 +266,8 @@ int main(int, char**)
     char ResultCall[256];
     SystemCall("qdbus org.kde.KWin /Compositor active", ResultCall);
     State.Settings.Compositor = strcmp(ResultCall, "true\n") == 0;
+    const char* CompositorLabelOn = ICON_FA_TOGGLE_ON " KDE Compositor";
+    const char* CompositorLabelOff =  ICON_FA_TOGGLE_OFF " KDE Compositor";
 
     // Allocate log
     char* log_buffer = (char*)ReserveMemory(&State.Arena, Megabytes(90));
@@ -295,14 +299,14 @@ int main(int, char**)
         // Menu
         if (ImGui::BeginMainMenuBar())
         {
-            if (ImGui::BeginMenu("File"))
+            if (ImGui::BeginMenu(ICON_FA_FILE " File"))
             {
-                if (ImGui::MenuItem("Open data directory"))
+                if (ImGui::MenuItem(ICON_FA_FOLDER " Open data directory"))
                 {
                     BrowseToSubfolder(DATA_DIR);
                 }
 
-                if (ImGui::MenuItem("Quit", 0, false))
+                if (ImGui::MenuItem(ICON_FA_DOOR_CLOSED " Quit", 0, false))
                 {
                     glfwSetWindowShouldClose(window, 1);
                 }
@@ -310,7 +314,7 @@ int main(int, char**)
             }
             if (ImGui::BeginMenu(ICON_FA_GEAR " Options"))
             {
-                if (ImGui::BeginMenu("Display"))
+                if (ImGui::BeginMenu(ICON_FA_COMPUTER " Display"))
                 {
                     GLFWmonitor** AvailableMonitor = monitors;
                     for (int i = 0; i < MonitorCount; ++i)
@@ -335,27 +339,34 @@ int main(int, char**)
                 }
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Compositor", 0, &State.Settings.Compositor))
-                {
-                    RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
-                }
+                ImGui::MenuItem("KDE Compositor toggle", 0, &State.Settings.ShowCompositorButton);
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Docking", 0, &State.Settings.Dockspace)) {
+                if (ImGui::MenuItem(ICON_FA_ANCHOR " Docking", 0, &State.Settings.Dockspace)) {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                if (ImGui::MenuItem("Default dock layout", 0, false, State.Settings.Dockspace))
+                if (ImGui::MenuItem(ICON_FA_BORDER_ALL " Default dock layout", 0, false, State.Settings.Dockspace))
                 {
                     ForceLayout = State.Settings.Dockspace;
                 }
-                ImGui::MenuItem("Demo window", 0, &State.Settings.ShowWindow[0]);
-                ImGui::MenuItem("Customization window", 0, &State.Settings.ShowWindow[1]);
-                ImGui::MenuItem("Log window", 0, &State.Settings.ShowWindow[2]);
-                if (ImGui::MenuItem("Show all windows", 0, false))
+
+                ImGui::Separator();
+                ImGui::MenuItem(ICON_FA_HOUSE_LAPTOP " Demo window", 0, &State.Settings.ShowWindow[0]);
+                ImGui::MenuItem(ICON_FA_PENCIL " Customization window", 0, &State.Settings.ShowWindow[1]);
+                ImGui::MenuItem(ICON_FA_CLIPBOARD_QUESTION " Log window", 0, &State.Settings.ShowWindow[2]);
+                if (ImGui::MenuItem(ICON_FA_WINDOW_RESTORE " Show all windows", 0, false))
                 {
                     state_ShowAllWindows(&State);
                 }
                 ImGui::EndMenu();
+            }
+
+            if (State.Settings.ShowCompositorButton)
+            {
+                if (ImGui::MenuItem(State.Settings.Compositor ? CompositorLabelOn : CompositorLabelOff, 0))
+                {
+                    RefreshGraphicSettings(window, CurrentMonitor, &State.Settings);
+                }
             }
             ImGui::EndMainMenuBar();
         }
