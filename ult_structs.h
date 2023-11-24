@@ -34,6 +34,7 @@ struct ult_settings
 {
     bool Fullscreen = 0;
     bool Compositor = 0;
+    bool ShowCompositorButton = 1;
     bool Dockspace = 1;
 
     int MonitorIndex = 0;
