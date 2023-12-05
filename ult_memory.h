@@ -6,6 +6,7 @@
 #endif
 
 #define ARENA_SIZE_IN_BYTES Megabytes(100)
+#define LOG_SIZE_IN_BYTES Megabytes(90)
 
 //NOTE(pipecaniza): right now the arena is not capable to free resources(linear allocator) to avoid fragmentation
 struct arena
@@ -23,13 +24,19 @@ MakeArena()
 }
 
 function uint8*
+MakeLog()
+{
+    return (uint8*)calloc(1, LOG_SIZE_IN_BYTES);
+}
+
+function uint8*
 PushToMemory(arena* Arena, void* Ptr, uint32 SizeInBytes)
 {
     assert(Arena->BufferSize + SizeInBytes < ARENA_SIZE_IN_BYTES);
 
     uint8* BytePtr = (uint8*)Ptr;
-    uint8* BaseAddress = Arena->MemoryArena + Arena->BufferSize;    
-    for (uint32 i = 0; i < SizeInBytes; ++i) 
+    uint8* BaseAddress = Arena->MemoryArena + Arena->BufferSize;
+    for (uint32 i = 0; i < SizeInBytes; ++i)
     {
         uint8* CurrentByte = BytePtr + i;
         Arena->MemoryArena[Arena->BufferSize++] = *CurrentByte;
@@ -47,8 +54,8 @@ PushToMemoryAtLocation(arena* Arena, uint8* ArenaPointer, void* Ptr, uint32 Size
     assert(Arena->BufferSize + SizeInBytes < ARENA_SIZE_IN_BYTES);
 
     uint8* BytePtr = (uint8*)Ptr;
-    uint8* BaseAddress = ArenaPointer;    
-    for (uint32 i = 0; i < SizeInBytes; ++i) 
+    uint8* BaseAddress = ArenaPointer;
+    for (uint32 i = 0; i < SizeInBytes; ++i)
     {
         uint8* CurrentByte = BytePtr + i;
         *(BaseAddress + i) = *CurrentByte;
@@ -72,4 +79,10 @@ AllocateString(arena* Arena, char* Data)
     // Add +1 to store '\0' so we can send the data directly to ImGui without additional steps
     uint8* Address = PushToMemory(Arena, Data, strlen(Data ) + 1);
     return BundleString(Address);
+}
+
+function void
+ResetArena(arena* Arena) {
+    memset(Arena->MemoryArena, 0, ARENA_SIZE_IN_BYTES);
+    Arena->BufferSize = 0;
 }

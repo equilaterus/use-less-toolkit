@@ -190,6 +190,20 @@ DisplayWidget(ult_config* Config)
     ImGui::Separator();
 }
 
+function void
+LoadConfiguration(ult_state* State)
+{
+    // Load custom settings
+    fileutils_LoadSettings(&State->Settings);
+
+    // Load scripts and applications
+    State->ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, State, ult_rm_Script);
+    State->ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, State, ult_rm_Application);
+
+    fileutils_ExploreCustomDirectory(CUSTOM_DIR, State);
+}
+
+
 // Main code
 int main(int, char**)
 {
@@ -252,15 +266,7 @@ int main(int, char**)
     // State
     ult_state State = {};
     State.Arena = MakeArena();
-
-    // Load custom settings
-    fileutils_LoadSettings(&State.Settings);
-
-    // Load scripts and applications
-    State.ScriptsConfig = fileutils_ExploreSubDirectoriesForConfig(SCRIPTS_DIR, &State, ult_rm_Script);
-    State.ApplicationsConfig = fileutils_ExploreSubDirectoriesForConfig(APPLICATIONS_DIR, &State, ult_rm_Application);
-
-    fileutils_ExploreCustomDirectory(CUSTOM_DIR, &State);
+    LoadConfiguration(&State);
 
     // Get compositor state
     char ResultCall[256];
@@ -270,19 +276,28 @@ int main(int, char**)
     const char* CompositorLabelOff =  ICON_FA_TOGGLE_OFF " KDE Compositor";
 
     // Allocate log
-    char* log_buffer = (char*)ReserveMemory(&State.Arena, Megabytes(90));
+    char* LogBuffer = (char*)MakeLog();
     freopen("/dev/null", "a", stdout);
-    setbuf(stdout, log_buffer);
+    setbuf(stdout, LogBuffer);
 
+    // Available screens
     int MonitorCount;
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
 
+    static bool ReloadConfiguration = 1;
     static bool ForceLayout = 0;
     static bool ReloadFonts = 0;
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+        if (ReloadConfiguration)
+        {
+            ResetArena(&State.Arena);
+            LoadConfiguration(&State);
+            ReloadConfiguration = 0;
+        }
+
         if (ReloadFonts)
         {
             ImportDefaultFont(BaseFontSize, 1);
@@ -305,6 +320,12 @@ int main(int, char**)
                 {
                     BrowseToSubfolder(DATA_DIR);
                 }
+
+                if (ImGui::MenuItem(ICON_FA_ROTATE " Reload Configuration", 0))
+                {
+                    ReloadConfiguration = 1;
+                }
+                ImGui::Separator();
 
                 if (ImGui::MenuItem(ICON_FA_DOOR_CLOSED " Quit", 0, false))
                 {
@@ -416,12 +437,12 @@ int main(int, char**)
             ImGui::SeparatorText("Log");
             if (ImGui::Button("Copy"))
             {
-                ImGui::SetClipboardText(log_buffer);
+                ImGui::SetClipboardText(LogBuffer);
             }
             if (ImGui::BeginChild("ult_log", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
             {
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                ImGui::TextUnformatted(log_buffer);
+                ImGui::TextUnformatted(LogBuffer);
                 ImGui::PopStyleVar();
 
                 // Keep up at the bottom of the scroll region if we were already at the bottom at the beginning of the frame.
