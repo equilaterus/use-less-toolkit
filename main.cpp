@@ -285,7 +285,7 @@ int main(int, char**)
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
 
-    static bool ReloadConfiguration = 1;
+    static bool ReloadConfiguration = 0;
     static bool ForceLayout = 0;
     static bool ReloadFonts = 0;
     // Main loop
