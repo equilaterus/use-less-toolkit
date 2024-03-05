@@ -16,8 +16,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/dacanizares/source/github/use-less-toolkit",
-      "program": "/home/dacanizares/source/github/use-less-toolkit/build/Debug/outDebug",
+      "cwd": "${workspaceFolder}/ult",
+      "program": "${workspaceFolder}/ult",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
