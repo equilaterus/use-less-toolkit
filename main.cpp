@@ -285,7 +285,7 @@ int main(int, char**)
     GLFWmonitor** monitors = glfwGetMonitors(&MonitorCount);
     GLFWmonitor* CurrentMonitor = *monitors;
 
-    static bool ReloadConfiguration = 1;
+    static bool ReloadConfiguration = 0;
     static bool ForceLayout = 0;
     static bool ReloadFonts = 0;
     // Main loop
@@ -360,7 +360,7 @@ int main(int, char**)
                 }
                 ImGui::Separator();
 
-                ImGui::MenuItem("KDE Compositor toggle", 0, &State.Settings.ShowCompositorButton);
+                ImGui::MenuItem(ICON_FA_BULLSEYE " Show KDE settings", 0, &State.Settings.ShowCompositorButton);
                 ImGui::Separator();
 
                 if (ImGui::MenuItem(ICON_FA_ANCHOR " Docking", 0, &State.Settings.Dockspace)) {
